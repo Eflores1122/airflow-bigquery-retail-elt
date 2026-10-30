@@ -1,0 +1,78 @@
+# Optional local Airflow. Tests and CI do not use this file.
+# User and password `airflow` / `airflow` (web and Postgres) are local demo
+# credentials only. Do not reuse them anywhere else.
+# AIRFLOW__CORE__FERNET_KEY is read from AIRFLOW_FERNET_KEY. Generate one
+# locally and put it in `.env` (see .env.example). Do not commit a key.
+
+x-airflow-common: &airflow-common
+  build: .
+  environment:
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:-}
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: "true"
+    MERCADOALBA_WAREHOUSE: duckdb
+    MERCADOALBA_LANDING_ROOT: /opt/airflow/data/landing
+    MERCADOALBA_DUCKDB_PATH: /opt/airflow/data/warehouse/mercadoalba.duckdb
+    PYTHONPATH: /opt/airflow/project/src
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./src:/opt/airflow/project/src
+    - ./data:/opt/airflow/data
+  user: "${AIRFLOW_UID:-50000}:0"
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      # Local demo database credentials only. Same user and password as the web UI.
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  airflow-init:
+    <<: *airflow-common
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        airflow db migrate
+        # Local demo login only: username airflow, password airflow.
+        airflow users create \
+          --username airflow \
+          --password airflow \
+          --firstname Mercado \
+          --lastname Alba \
+          --role Admin \
+          --email airflow@example.invalid \
+          || echo "demo user already exists"
+    restart: "no"
+
+  airflow-webserver:
+    <<: *airflow-common
+    command: webserver
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+    restart: unless-stopped

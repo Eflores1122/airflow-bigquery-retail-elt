@@ -1,0 +1,11 @@
+.git
+.venv
+venv
+data
+.airflow-tests
+.pytest_cache
+.ruff_cache
+**/__pycache__
+**/*.pyc
+benchmarks
+*.duckdb

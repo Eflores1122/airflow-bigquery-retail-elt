@@ -1,0 +1,93 @@
+{
+  "measured_at_utc": "2026-10-30T19:09:23+00:00",
+  "disclaimer": "Local DuckDB timings on synthetic retail data only. These figures are local synthetic runs.",
+  "machine": {
+    "platform": "Linux-6.12.94+-x86_64-with-glibc2.39",
+    "python": "3.12.3",
+    "duckdb": "2.0.0",
+    "cpu_count": 4
+  },
+  "dataset": {
+    "days": 21,
+    "start": "2026-01-05",
+    "end": "2026-01-25",
+    "order_lines_per_day_base": 60000,
+    "fact_order_lines": 1215000,
+    "products": 1000,
+    "stores": 20,
+    "customers": 8000,
+    "seed": 42,
+    "iterations": 3,
+    "warmup": 1,
+    "vary_volume_by_weekday": true
+  },
+  "scenarios": {
+    "full_refresh_all_history": {
+      "seconds_median": 4.55,
+      "seconds_min": 4.315,
+      "seconds_max": 5.456,
+      "load_and_stage_seconds_median": 2.606,
+      "publish_seconds_median": 1.805,
+      "quality_seconds_median": 0.109,
+      "order_line_files_read": 21,
+      "fact_order_lines": 1215000,
+      "staging_order_lines": 1215000,
+      "samples_total_seconds": [
+        4.55,
+        4.315,
+        5.456
+      ]
+    },
+    "incremental_lookback_zero": {
+      "seconds_median": 1.45,
+      "seconds_min": 1.388,
+      "seconds_max": 1.462,
+      "load_and_stage_seconds_median": 0.189,
+      "publish_seconds_median": 1.072,
+      "quality_seconds_median": 0.073,
+      "order_line_files_read": 1,
+      "fact_order_lines": 1215000,
+      "staging_order_lines": 27000,
+      "samples_total_seconds": [
+        1.45,
+        1.462,
+        1.388
+      ]
+    },
+    "incremental_lookback_one_day": {
+      "seconds_median": 3.463,
+      "seconds_min": 3.452,
+      "seconds_max": 3.537,
+      "load_and_stage_seconds_median": 0.571,
+      "publish_seconds_median": 1.932,
+      "quality_seconds_median": 0.082,
+      "order_line_files_read": 2,
+      "fact_order_lines": 1215000,
+      "staging_order_lines": 69000,
+      "samples_total_seconds": [
+        3.537,
+        3.452,
+        3.463
+      ]
+    },
+    "incremental_backfill_from_empty": {
+      "seconds_median": 21.108,
+      "seconds_min": 21.108,
+      "seconds_max": 21.108,
+      "load_and_stage_seconds_median": 8.51,
+      "publish_seconds_median": 8.585,
+      "quality_seconds_median": 1.107,
+      "order_line_files_read": 21,
+      "fact_order_lines": 1215000,
+      "staging_order_lines": 1215000,
+      "samples_total_seconds": [
+        21.108
+      ],
+      "note": "Single pass. seconds_median is the sum of per-day totals, not a statistical median."
+    }
+  },
+  "ratio_full_refresh_to_incremental_day": 3.14,
+  "ratio_full_refresh_to_incremental_lookback": 1.31,
+  "ratio_transform_full_refresh_to_incremental_day": 3.5,
+  "ratio_transform_full_refresh_to_incremental_lookback": 1.76
+}

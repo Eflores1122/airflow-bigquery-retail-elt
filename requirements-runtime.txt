@@ -1,0 +1,5 @@
+# Runtime libraries added on top of the Airflow image.
+# Keep these aligned with the base dependencies in pyproject.toml.
+duckdb>=2,<3
+pyarrow>=16,<20
+numpy>=1.26,<2
