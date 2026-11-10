@@ -1,0 +1,21 @@
+{
+  "name": "mercadoalba-site",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 4173",
+    "test": "node verify-wasm.mjs",
+    "verify": "node verify-wasm.mjs"
+  },
+  "dependencies": {
+    "@duckdb/duckdb-wasm": "1.32.0",
+    "@fontsource/atkinson-hyperlegible": "^5.2.8",
+    "@fontsource/ibm-plex-mono": "^5.2.7"
+  },
+  "devDependencies": {
+    "vite": "^6.4.1"
+  }
+}

@@ -1,0 +1,1293 @@
+{
+  "generated_by": "scripts/export_browser_sample.py",
+  "dialect": "duckdb",
+  "boot": [
+    "CREATE TABLE IF NOT EXISTS raw_order_lines (\n  order_line_id VARCHAR NOT NULL,\n  order_id VARCHAR NOT NULL,\n  customer_id VARCHAR NOT NULL,\n  store_id VARCHAR NOT NULL,\n  product_id VARCHAR NOT NULL,\n  quantity BIGINT NOT NULL,\n  unit_price_centavos BIGINT NOT NULL,\n  line_amount_centavos BIGINT NOT NULL,\n  line_type VARCHAR NOT NULL,\n  channel VARCHAR NOT NULL,\n  status VARCHAR NOT NULL,\n  category VARCHAR NOT NULL,\n  order_ts TIMESTAMP NOT NULL,\n  order_date DATE NOT NULL,\n  extract_ts TIMESTAMP NOT NULL,\n  extract_date DATE NOT NULL,\n  source_file VARCHAR NOT NULL\n)",
+    "CREATE TABLE IF NOT EXISTS raw_products (\n  product_key BIGINT NOT NULL,\n  product_id VARCHAR NOT NULL,\n  sku VARCHAR NOT NULL,\n  product_name VARCHAR NOT NULL,\n  category VARCHAR NOT NULL,\n  brand VARCHAR NOT NULL,\n  list_price_centavos BIGINT NOT NULL,\n  is_active BOOLEAN NOT NULL,\n  extract_ts TIMESTAMP NOT NULL,\n  extract_date DATE NOT NULL,\n  source_file VARCHAR NOT NULL\n)",
+    "CREATE TABLE IF NOT EXISTS raw_customers (\n  customer_key BIGINT NOT NULL,\n  customer_id VARCHAR NOT NULL,\n  given_name VARCHAR NOT NULL,\n  family_name VARCHAR NOT NULL,\n  city VARCHAR NOT NULL,\n  state_code VARCHAR NOT NULL,\n  state_name VARCHAR NOT NULL,\n  loyalty_tier VARCHAR NOT NULL,\n  email VARCHAR NOT NULL,\n  extract_ts TIMESTAMP NOT NULL,\n  extract_date DATE NOT NULL,\n  source_file VARCHAR NOT NULL\n)",
+    "CREATE TABLE IF NOT EXISTS raw_stores (\n  store_key BIGINT NOT NULL,\n  store_id VARCHAR NOT NULL,\n  store_name VARCHAR NOT NULL,\n  channel VARCHAR NOT NULL,\n  city VARCHAR NOT NULL,\n  state_code VARCHAR NOT NULL,\n  state_name VARCHAR NOT NULL,\n  postal_code VARCHAR NOT NULL,\n  opened_on DATE NOT NULL,\n  is_active BOOLEAN NOT NULL,\n  extract_ts TIMESTAMP NOT NULL,\n  extract_date DATE NOT NULL,\n  source_file VARCHAR NOT NULL\n)",
+    "CREATE TABLE IF NOT EXISTS raw_daily_inventory (\n  store_id VARCHAR NOT NULL,\n  product_id VARCHAR NOT NULL,\n  snapshot_date DATE NOT NULL,\n  on_hand_units BIGINT NOT NULL,\n  reserved_units BIGINT NOT NULL,\n  extract_ts TIMESTAMP NOT NULL,\n  extract_date DATE NOT NULL,\n  source_file VARCHAR NOT NULL\n)",
+    "CREATE TABLE IF NOT EXISTS dim_product (\n  product_key BIGINT NOT NULL,\n  product_id VARCHAR NOT NULL,\n  sku VARCHAR NOT NULL,\n  product_name VARCHAR NOT NULL,\n  category VARCHAR NOT NULL,\n  brand VARCHAR NOT NULL,\n  list_price_centavos BIGINT NOT NULL,\n  is_active BOOLEAN NOT NULL\n)",
+    "CREATE TABLE IF NOT EXISTS dim_customer (\n  customer_key BIGINT NOT NULL,\n  customer_id VARCHAR NOT NULL,\n  given_name VARCHAR NOT NULL,\n  family_name VARCHAR NOT NULL,\n  city VARCHAR NOT NULL,\n  state_code VARCHAR NOT NULL,\n  state_name VARCHAR NOT NULL,\n  loyalty_tier VARCHAR NOT NULL,\n  email VARCHAR NOT NULL\n)",
+    "CREATE TABLE IF NOT EXISTS dim_store (\n  store_key BIGINT NOT NULL,\n  store_id VARCHAR NOT NULL,\n  store_name VARCHAR NOT NULL,\n  channel VARCHAR NOT NULL,\n  city VARCHAR NOT NULL,\n  state_code VARCHAR NOT NULL,\n  state_name VARCHAR NOT NULL,\n  postal_code VARCHAR NOT NULL,\n  opened_on DATE NOT NULL,\n  is_active BOOLEAN NOT NULL\n)",
+    "CREATE TABLE IF NOT EXISTS dim_date (\n  date_key BIGINT NOT NULL,\n  full_date DATE NOT NULL,\n  year BIGINT NOT NULL,\n  quarter BIGINT NOT NULL,\n  month BIGINT NOT NULL,\n  day BIGINT NOT NULL,\n  day_name VARCHAR NOT NULL,\n  is_weekend BOOLEAN NOT NULL,\n  is_mx_public_holiday BOOLEAN NOT NULL,\n  holiday_name VARCHAR NOT NULL\n)",
+    "CREATE TABLE IF NOT EXISTS fact_order_lines (\n  order_line_id VARCHAR NOT NULL,\n  order_id VARCHAR NOT NULL,\n  date_key BIGINT NOT NULL,\n  product_key BIGINT NOT NULL,\n  customer_key BIGINT NOT NULL,\n  store_key BIGINT NOT NULL,\n  quantity BIGINT NOT NULL,\n  unit_price_centavos BIGINT NOT NULL,\n  line_amount_centavos BIGINT NOT NULL,\n  amount_mxn DECIMAL(18, 2) NOT NULL,\n  line_type VARCHAR NOT NULL,\n  channel VARCHAR NOT NULL,\n  status VARCHAR NOT NULL,\n  category VARCHAR NOT NULL,\n  order_ts TIMESTAMP NOT NULL,\n  order_date DATE NOT NULL,\n  product_id VARCHAR NOT NULL,\n  customer_id VARCHAR NOT NULL,\n  store_id VARCHAR NOT NULL\n)",
+    "CREATE INDEX IF NOT EXISTS idx_fact_order_lines_order_date ON fact_order_lines(order_date)",
+    "CREATE INDEX IF NOT EXISTS idx_fact_order_lines_store_id ON fact_order_lines(store_id)",
+    "CREATE INDEX IF NOT EXISTS idx_fact_order_lines_product_id ON fact_order_lines(product_id)",
+    "CREATE INDEX IF NOT EXISTS idx_raw_order_lines_extract_date ON raw_order_lines(extract_date)",
+    "DELETE FROM dim_date WHERE full_date >= DATE '1900-01-01'",
+    "INSERT INTO dim_date (date_key, full_date, year, quarter, month, day, day_name, is_weekend, is_mx_public_holiday, holiday_name) SELECT date_key, full_date, year, quarter, month, day, day_name, is_weekend, is_mx_public_holiday, holiday_name FROM read_parquet(['calendar/dim_date.parquet'], hive_partitioning=false)"
+  ],
+  "runs": {
+    "inc-2026-03-02": {
+      "logical_date": "2026-03-02",
+      "lookback_days": 0,
+      "window": [
+        "2026-03-02"
+      ],
+      "correction": false,
+      "files": {
+        "order_lines": [
+          "landing/order_lines/dt=2026-03-02/part-000.parquet"
+        ],
+        "products": [
+          "landing/products/dt=2026-03-02/part-000.parquet"
+        ],
+        "customers": [
+          "landing/customers/dt=2026-03-02/part-000.parquet"
+        ],
+        "stores": [
+          "landing/stores/dt=2026-03-02/part-000.parquet"
+        ],
+        "daily_inventory": [
+          "landing/daily_inventory/dt=2026-03-02/part-000.parquet"
+        ]
+      },
+      "tasks": {
+        "resolve_window": [
+          "SELECT DATE '2026-03-02' AS logical_date, DATE '2026-03-02' AS window_start, DATE '2026-03-02' AS window_end, 0 AS lookback_days"
+        ],
+        "generate_and_land": [
+          "(SELECT 'order_lines' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/order_lines/dt=2026-03-02/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'products' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/products/dt=2026-03-02/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'customers' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/customers/dt=2026-03-02/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'stores' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/stores/dt=2026-03-02/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'daily_inventory' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/daily_inventory/dt=2026-03-02/part-000.parquet'], hive_partitioning=false)) ORDER BY entity"
+        ],
+        "load_raw_and_stage": [
+          "DELETE FROM raw_order_lines WHERE extract_date BETWEEN DATE '2026-03-02' AND DATE '2026-03-02'",
+          "INSERT INTO raw_order_lines (order_line_id, order_id, customer_id, store_id, product_id, quantity, unit_price_centavos, line_amount_centavos, line_type, channel, status, category, order_ts, order_date, extract_ts, extract_date, source_file) SELECT order_line_id, order_id, customer_id, store_id, product_id, quantity, unit_price_centavos, line_amount_centavos, line_type, channel, status, category, order_ts, order_date, extract_ts, extract_date, source_file FROM read_parquet(['landing/order_lines/dt=2026-03-02/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_products WHERE extract_date BETWEEN DATE '2026-03-02' AND DATE '2026-03-02'",
+          "INSERT INTO raw_products (product_key, product_id, sku, product_name, category, brand, list_price_centavos, is_active, extract_ts, extract_date, source_file) SELECT product_key, product_id, sku, product_name, category, brand, list_price_centavos, is_active, extract_ts, extract_date, source_file FROM read_parquet(['landing/products/dt=2026-03-02/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_customers WHERE extract_date BETWEEN DATE '2026-03-02' AND DATE '2026-03-02'",
+          "INSERT INTO raw_customers (customer_key, customer_id, given_name, family_name, city, state_code, state_name, loyalty_tier, email, extract_ts, extract_date, source_file) SELECT customer_key, customer_id, given_name, family_name, city, state_code, state_name, loyalty_tier, email, extract_ts, extract_date, source_file FROM read_parquet(['landing/customers/dt=2026-03-02/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_stores WHERE extract_date BETWEEN DATE '2026-03-02' AND DATE '2026-03-02'",
+          "INSERT INTO raw_stores (store_key, store_id, store_name, channel, city, state_code, state_name, postal_code, opened_on, is_active, extract_ts, extract_date, source_file) SELECT store_key, store_id, store_name, channel, city, state_code, state_name, postal_code, opened_on, is_active, extract_ts, extract_date, source_file FROM read_parquet(['landing/stores/dt=2026-03-02/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_daily_inventory WHERE extract_date BETWEEN DATE '2026-03-02' AND DATE '2026-03-02'",
+          "INSERT INTO raw_daily_inventory (store_id, product_id, snapshot_date, on_hand_units, reserved_units, extract_ts, extract_date, source_file) SELECT store_id, product_id, snapshot_date, on_hand_units, reserved_units, extract_ts, extract_date, source_file FROM read_parquet(['landing/daily_inventory/dt=2026-03-02/part-000.parquet'], hive_partitioning=false)",
+          "CREATE OR REPLACE TABLE stg_order_lines AS\nSELECT\n      order_line_id,\n      order_id,\n      customer_id,\n      store_id,\n      product_id,\n      quantity,\n      unit_price_centavos,\n      line_amount_centavos,\n      CAST(line_amount_centavos AS DECIMAL(18, 2)) / 100 AS amount_mxn,\n      line_type,\n      channel,\n      status,\n      category,\n      order_ts,\n      order_date\nFROM (\n  SELECT\n      order_line_id,\n      order_id,\n      customer_id,\n      store_id,\n      product_id,\n      quantity,\n      unit_price_centavos,\n      line_amount_centavos,\n      line_type,\n      channel,\n      status,\n      category,\n      order_ts,\n      order_date,\n      ROW_NUMBER() OVER (\n        PARTITION BY order_line_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_order_lines\n  WHERE order_date BETWEEN DATE '2026-03-02' AND DATE '2026-03-02'\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_products AS\nSELECT\n      product_key,\n      product_id,\n      sku,\n      product_name,\n      category,\n      brand,\n      list_price_centavos,\n      is_active\nFROM (\n  SELECT\n      product_key,\n      product_id,\n      sku,\n      product_name,\n      category,\n      brand,\n      list_price_centavos,\n      is_active,\n      ROW_NUMBER() OVER (\n        PARTITION BY product_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_products\n  WHERE extract_date = (SELECT MAX(extract_date) FROM raw_products)\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_customers AS\nSELECT\n      customer_key,\n      customer_id,\n      given_name,\n      family_name,\n      city,\n      state_code,\n      state_name,\n      loyalty_tier,\n      email\nFROM (\n  SELECT\n      customer_key,\n      customer_id,\n      given_name,\n      family_name,\n      city,\n      state_code,\n      state_name,\n      loyalty_tier,\n      email,\n      ROW_NUMBER() OVER (\n        PARTITION BY customer_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_customers\n  WHERE extract_date = (SELECT MAX(extract_date) FROM raw_customers)\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_stores AS\nSELECT\n      store_key,\n      store_id,\n      store_name,\n      channel,\n      city,\n      state_code,\n      state_name,\n      postal_code,\n      opened_on,\n      is_active\nFROM (\n  SELECT\n      store_key,\n      store_id,\n      store_name,\n      channel,\n      city,\n      state_code,\n      state_name,\n      postal_code,\n      opened_on,\n      is_active,\n      ROW_NUMBER() OVER (\n        PARTITION BY store_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_stores\n  WHERE extract_date = (SELECT MAX(extract_date) FROM raw_stores)\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_daily_inventory AS\nSELECT\n      store_id,\n      product_id,\n      snapshot_date,\n      on_hand_units,\n      reserved_units\nFROM (\n  SELECT\n      store_id,\n      product_id,\n      snapshot_date,\n      on_hand_units,\n      reserved_units,\n      ROW_NUMBER() OVER (\n        PARTITION BY store_id, product_id, snapshot_date\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_daily_inventory\n  WHERE snapshot_date BETWEEN DATE '2026-03-02' AND DATE '2026-03-02'\n) ranked\nWHERE rn = 1"
+        ],
+        "publish_marts": [
+          "MERGE INTO dim_product AS t\nUSING stg_products AS src\nON t.product_id = src.product_id\nWHEN MATCHED THEN UPDATE SET\n  product_key = src.product_key,\n  sku = src.sku,\n  product_name = src.product_name,\n  category = src.category,\n  brand = src.brand,\n  list_price_centavos = src.list_price_centavos,\n  is_active = src.is_active\nWHEN NOT MATCHED THEN INSERT (product_key, product_id, sku, product_name, category, brand, list_price_centavos, is_active)\nVALUES (src.product_key, src.product_id, src.sku, src.product_name, src.category, src.brand, src.list_price_centavos, src.is_active)\nWHEN NOT MATCHED BY SOURCE AND TRUE THEN DELETE",
+          "MERGE INTO dim_customer AS t\nUSING stg_customers AS src\nON t.customer_id = src.customer_id\nWHEN MATCHED THEN UPDATE SET\n  customer_key = src.customer_key,\n  given_name = src.given_name,\n  family_name = src.family_name,\n  city = src.city,\n  state_code = src.state_code,\n  state_name = src.state_name,\n  loyalty_tier = src.loyalty_tier,\n  email = src.email\nWHEN NOT MATCHED THEN INSERT (customer_key, customer_id, given_name, family_name, city, state_code, state_name, loyalty_tier, email)\nVALUES (src.customer_key, src.customer_id, src.given_name, src.family_name, src.city, src.state_code, src.state_name, src.loyalty_tier, src.email)\nWHEN NOT MATCHED BY SOURCE AND TRUE THEN DELETE",
+          "MERGE INTO dim_store AS t\nUSING stg_stores AS src\nON t.store_id = src.store_id\nWHEN MATCHED THEN UPDATE SET\n  store_key = src.store_key,\n  store_name = src.store_name,\n  channel = src.channel,\n  city = src.city,\n  state_code = src.state_code,\n  state_name = src.state_name,\n  postal_code = src.postal_code,\n  opened_on = src.opened_on,\n  is_active = src.is_active\nWHEN NOT MATCHED THEN INSERT (store_key, store_id, store_name, channel, city, state_code, state_name, postal_code, opened_on, is_active)\nVALUES (src.store_key, src.store_id, src.store_name, src.channel, src.city, src.state_code, src.state_name, src.postal_code, src.opened_on, src.is_active)\nWHEN NOT MATCHED BY SOURCE AND TRUE THEN DELETE",
+          "CREATE OR REPLACE TABLE int_order_line_enriched AS\nSELECT\n      s.order_line_id,\n      s.order_id,\n      d.date_key,\n      p.product_key,\n      c.customer_key,\n      st.store_key,\n      s.quantity,\n      s.unit_price_centavos,\n      s.line_amount_centavos,\n      s.amount_mxn,\n      s.line_type,\n      s.channel,\n      s.status,\n      s.category,\n      s.order_ts,\n      s.order_date,\n      s.product_id,\n      s.customer_id,\n      s.store_id\nFROM stg_order_lines AS s\nJOIN dim_product AS p\n  ON s.product_id = p.product_id\nJOIN dim_customer AS c\n  ON s.customer_id = c.customer_id\nJOIN dim_store AS st\n  ON s.store_id = st.store_id\nJOIN dim_date AS d\n  ON s.order_date = d.full_date",
+          "MERGE INTO fact_order_lines AS t\nUSING int_order_line_enriched AS src\nON t.order_line_id = src.order_line_id AND t.order_date = src.order_date\n  AND t.order_date BETWEEN DATE '2026-03-02' AND DATE '2026-03-02'\nWHEN MATCHED THEN UPDATE SET\n  order_id = src.order_id,\n  date_key = src.date_key,\n  product_key = src.product_key,\n  customer_key = src.customer_key,\n  store_key = src.store_key,\n  quantity = src.quantity,\n  unit_price_centavos = src.unit_price_centavos,\n  line_amount_centavos = src.line_amount_centavos,\n  amount_mxn = src.amount_mxn,\n  line_type = src.line_type,\n  channel = src.channel,\n  status = src.status,\n  category = src.category,\n  order_ts = src.order_ts,\n  product_id = src.product_id,\n  customer_id = src.customer_id,\n  store_id = src.store_id\nWHEN NOT MATCHED THEN INSERT (order_line_id, order_id, date_key, product_key, customer_key, store_key, quantity, unit_price_centavos, line_amount_centavos, amount_mxn, line_type, channel, status, category, order_ts, order_date, product_id, customer_id, store_id)\nVALUES (src.order_line_id, src.order_id, src.date_key, src.product_key, src.customer_key, src.store_key, src.quantity, src.unit_price_centavos, src.line_amount_centavos, src.amount_mxn, src.line_type, src.channel, src.status, src.category, src.order_ts, src.order_date, src.product_id, src.customer_id, src.store_id)\nWHEN NOT MATCHED BY SOURCE AND t.order_date BETWEEN DATE '2026-03-02' AND DATE '2026-03-02' THEN DELETE"
+        ],
+        "data_quality": [
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM fact_order_lines\n  \n  GROUP BY order_line_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COUNT(*) AS violations FROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-02' AND DATE '2026-03-02') AND (order_line_id IS NULL OR order_id IS NULL OR date_key IS NULL\n  OR product_key IS NULL OR customer_key IS NULL OR store_key IS NULL\n  OR quantity IS NULL OR unit_price_centavos IS NULL OR line_amount_centavos IS NULL\n  OR amount_mxn IS NULL OR order_date IS NULL OR product_id IS NULL\n  OR customer_id IS NULL OR store_id IS NULL OR line_type IS NULL\n  OR status IS NULL OR channel IS NULL OR category IS NULL)",
+          "SELECT COUNT(*) AS violations FROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-02' AND DATE '2026-03-02') AND ((line_type = 'sale' AND (quantity <= 0 OR line_amount_centavos <= 0))\n  OR (line_type = 'return' AND (quantity >= 0 OR line_amount_centavos >= 0))\n  OR line_type NOT IN ('sale', 'return')\n  OR status NOT IN ('completed', 'cancelled')\n  OR channel NOT IN ('online', 'physical'))",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-02' AND DATE '2026-03-02') AND (quantity * unit_price_centavos <> line_amount_centavos)",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-02' AND DATE '2026-03-02') AND (line_amount_centavos <> CAST(ROUND(amount_mxn * 100, 0) AS BIGINT))",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_product AS p\n  ON f.product_key = p.product_key\n AND f.product_id = p.product_id\nWHERE (p.product_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-02' AND DATE '2026-03-02')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_customer AS c\n  ON f.customer_key = c.customer_key\n AND f.customer_id = c.customer_id\nWHERE (c.customer_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-02' AND DATE '2026-03-02')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_store AS st\n  ON f.store_key = st.store_key\n AND f.store_id = st.store_id\nWHERE (st.store_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-02' AND DATE '2026-03-02')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_date AS d\n  ON f.date_key = d.date_key\n AND f.order_date = d.full_date\nWHERE (d.date_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-02' AND DATE '2026-03-02')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nJOIN dim_product AS p\n  ON f.product_key = p.product_key\nWHERE (f.category <> p.category) AND (f.order_date BETWEEN DATE '2026-03-02' AND DATE '2026-03-02')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nJOIN dim_store AS st\n  ON f.store_key = st.store_key\nWHERE (f.channel <> st.channel) AND (f.order_date BETWEEN DATE '2026-03-02' AND DATE '2026-03-02')",
+          "SELECT ABS(\n  (SELECT COUNT(*) FROM stg_order_lines) -\n  (SELECT COUNT(*) FROM fact_order_lines WHERE order_date BETWEEN DATE '2026-03-02' AND DATE '2026-03-02')\n) AS violations",
+          "SELECT CASE\n  WHEN COALESCE((SELECT MAX(order_date) FROM fact_order_lines), DATE '1900-01-01')\n       >= DATE '2026-03-02' THEN 0\n  ELSE 1\nEND AS violations",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM dim_product\n  \n  GROUP BY product_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM dim_customer\n  \n  GROUP BY customer_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM dim_store\n  \n  GROUP BY store_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COUNT(*) AS violations\nFROM stg_daily_inventory\nWHERE store_id IS NULL\n   OR product_id IS NULL\n   OR snapshot_date IS NULL\n   OR on_hand_units IS NULL\n   OR reserved_units IS NULL\n   OR on_hand_units < 0\n   OR reserved_units < 0\n   OR reserved_units > on_hand_units",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM stg_daily_inventory\n  \n  GROUP BY store_id, product_id, snapshot_date\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COUNT(*) AS violations\nFROM stg_daily_inventory AS i\nLEFT JOIN dim_store AS st\n  ON i.store_id = st.store_id\nWHERE st.store_id IS NULL",
+          "SELECT COUNT(*) AS violations\nFROM stg_daily_inventory AS i\nLEFT JOIN dim_product AS p\n  ON i.product_id = p.product_id\nWHERE p.product_id IS NULL",
+          "SELECT COUNT(*) AS violations\nFROM raw_order_lines\nWHERE extract_date <> order_date",
+          "SELECT COUNT(*) AS violations\nFROM raw_daily_inventory\nWHERE extract_date <> snapshot_date"
+        ]
+      },
+      "quality_names": [
+        "fact_order_line_id_unique",
+        "fact_required_not_null",
+        "fact_line_sign",
+        "fact_line_amount_matches_quantity",
+        "fact_amount_mxn_matches_centavos",
+        "fact_product_fk",
+        "fact_customer_fk",
+        "fact_store_fk",
+        "fact_date_fk",
+        "fact_category_matches_product",
+        "fact_channel_matches_store",
+        "staging_matches_fact_rows",
+        "fact_freshness",
+        "dim_product_id_unique",
+        "dim_customer_id_unique",
+        "dim_store_id_unique",
+        "inventory_not_null_or_negative",
+        "inventory_unique",
+        "inventory_store_fk",
+        "inventory_product_fk",
+        "raw_extract_date_matches_order_date",
+        "raw_inventory_extract_date_matches_snapshot"
+      ],
+      "expected": {
+        "fact_rows": 42,
+        "cents": 12836567,
+        "staging_rows": 42,
+        "by_day": [
+          {
+            "order_date": "2026-03-02",
+            "rows": 42,
+            "cents": 12836567
+          }
+        ]
+      },
+      "pipeline": {
+        "order_line_files_read": 1,
+        "fact_rows_in_window": 42,
+        "staging_order_lines": 42,
+        "quality_passed": true
+      }
+    },
+    "inc-2026-03-03": {
+      "logical_date": "2026-03-03",
+      "lookback_days": 0,
+      "window": [
+        "2026-03-03"
+      ],
+      "correction": false,
+      "files": {
+        "order_lines": [
+          "landing/order_lines/dt=2026-03-03/part-000.parquet"
+        ],
+        "products": [
+          "landing/products/dt=2026-03-03/part-000.parquet"
+        ],
+        "customers": [
+          "landing/customers/dt=2026-03-03/part-000.parquet"
+        ],
+        "stores": [
+          "landing/stores/dt=2026-03-03/part-000.parquet"
+        ],
+        "daily_inventory": [
+          "landing/daily_inventory/dt=2026-03-03/part-000.parquet"
+        ]
+      },
+      "tasks": {
+        "resolve_window": [
+          "SELECT DATE '2026-03-03' AS logical_date, DATE '2026-03-03' AS window_start, DATE '2026-03-03' AS window_end, 0 AS lookback_days"
+        ],
+        "generate_and_land": [
+          "(SELECT 'order_lines' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/order_lines/dt=2026-03-03/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'products' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/products/dt=2026-03-03/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'customers' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/customers/dt=2026-03-03/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'stores' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/stores/dt=2026-03-03/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'daily_inventory' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/daily_inventory/dt=2026-03-03/part-000.parquet'], hive_partitioning=false)) ORDER BY entity"
+        ],
+        "load_raw_and_stage": [
+          "DELETE FROM raw_order_lines WHERE extract_date BETWEEN DATE '2026-03-03' AND DATE '2026-03-03'",
+          "INSERT INTO raw_order_lines (order_line_id, order_id, customer_id, store_id, product_id, quantity, unit_price_centavos, line_amount_centavos, line_type, channel, status, category, order_ts, order_date, extract_ts, extract_date, source_file) SELECT order_line_id, order_id, customer_id, store_id, product_id, quantity, unit_price_centavos, line_amount_centavos, line_type, channel, status, category, order_ts, order_date, extract_ts, extract_date, source_file FROM read_parquet(['landing/order_lines/dt=2026-03-03/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_products WHERE extract_date BETWEEN DATE '2026-03-03' AND DATE '2026-03-03'",
+          "INSERT INTO raw_products (product_key, product_id, sku, product_name, category, brand, list_price_centavos, is_active, extract_ts, extract_date, source_file) SELECT product_key, product_id, sku, product_name, category, brand, list_price_centavos, is_active, extract_ts, extract_date, source_file FROM read_parquet(['landing/products/dt=2026-03-03/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_customers WHERE extract_date BETWEEN DATE '2026-03-03' AND DATE '2026-03-03'",
+          "INSERT INTO raw_customers (customer_key, customer_id, given_name, family_name, city, state_code, state_name, loyalty_tier, email, extract_ts, extract_date, source_file) SELECT customer_key, customer_id, given_name, family_name, city, state_code, state_name, loyalty_tier, email, extract_ts, extract_date, source_file FROM read_parquet(['landing/customers/dt=2026-03-03/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_stores WHERE extract_date BETWEEN DATE '2026-03-03' AND DATE '2026-03-03'",
+          "INSERT INTO raw_stores (store_key, store_id, store_name, channel, city, state_code, state_name, postal_code, opened_on, is_active, extract_ts, extract_date, source_file) SELECT store_key, store_id, store_name, channel, city, state_code, state_name, postal_code, opened_on, is_active, extract_ts, extract_date, source_file FROM read_parquet(['landing/stores/dt=2026-03-03/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_daily_inventory WHERE extract_date BETWEEN DATE '2026-03-03' AND DATE '2026-03-03'",
+          "INSERT INTO raw_daily_inventory (store_id, product_id, snapshot_date, on_hand_units, reserved_units, extract_ts, extract_date, source_file) SELECT store_id, product_id, snapshot_date, on_hand_units, reserved_units, extract_ts, extract_date, source_file FROM read_parquet(['landing/daily_inventory/dt=2026-03-03/part-000.parquet'], hive_partitioning=false)",
+          "CREATE OR REPLACE TABLE stg_order_lines AS\nSELECT\n      order_line_id,\n      order_id,\n      customer_id,\n      store_id,\n      product_id,\n      quantity,\n      unit_price_centavos,\n      line_amount_centavos,\n      CAST(line_amount_centavos AS DECIMAL(18, 2)) / 100 AS amount_mxn,\n      line_type,\n      channel,\n      status,\n      category,\n      order_ts,\n      order_date\nFROM (\n  SELECT\n      order_line_id,\n      order_id,\n      customer_id,\n      store_id,\n      product_id,\n      quantity,\n      unit_price_centavos,\n      line_amount_centavos,\n      line_type,\n      channel,\n      status,\n      category,\n      order_ts,\n      order_date,\n      ROW_NUMBER() OVER (\n        PARTITION BY order_line_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_order_lines\n  WHERE order_date BETWEEN DATE '2026-03-03' AND DATE '2026-03-03'\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_products AS\nSELECT\n      product_key,\n      product_id,\n      sku,\n      product_name,\n      category,\n      brand,\n      list_price_centavos,\n      is_active\nFROM (\n  SELECT\n      product_key,\n      product_id,\n      sku,\n      product_name,\n      category,\n      brand,\n      list_price_centavos,\n      is_active,\n      ROW_NUMBER() OVER (\n        PARTITION BY product_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_products\n  WHERE extract_date = (SELECT MAX(extract_date) FROM raw_products)\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_customers AS\nSELECT\n      customer_key,\n      customer_id,\n      given_name,\n      family_name,\n      city,\n      state_code,\n      state_name,\n      loyalty_tier,\n      email\nFROM (\n  SELECT\n      customer_key,\n      customer_id,\n      given_name,\n      family_name,\n      city,\n      state_code,\n      state_name,\n      loyalty_tier,\n      email,\n      ROW_NUMBER() OVER (\n        PARTITION BY customer_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_customers\n  WHERE extract_date = (SELECT MAX(extract_date) FROM raw_customers)\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_stores AS\nSELECT\n      store_key,\n      store_id,\n      store_name,\n      channel,\n      city,\n      state_code,\n      state_name,\n      postal_code,\n      opened_on,\n      is_active\nFROM (\n  SELECT\n      store_key,\n      store_id,\n      store_name,\n      channel,\n      city,\n      state_code,\n      state_name,\n      postal_code,\n      opened_on,\n      is_active,\n      ROW_NUMBER() OVER (\n        PARTITION BY store_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_stores\n  WHERE extract_date = (SELECT MAX(extract_date) FROM raw_stores)\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_daily_inventory AS\nSELECT\n      store_id,\n      product_id,\n      snapshot_date,\n      on_hand_units,\n      reserved_units\nFROM (\n  SELECT\n      store_id,\n      product_id,\n      snapshot_date,\n      on_hand_units,\n      reserved_units,\n      ROW_NUMBER() OVER (\n        PARTITION BY store_id, product_id, snapshot_date\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_daily_inventory\n  WHERE snapshot_date BETWEEN DATE '2026-03-03' AND DATE '2026-03-03'\n) ranked\nWHERE rn = 1"
+        ],
+        "publish_marts": [
+          "MERGE INTO dim_product AS t\nUSING stg_products AS src\nON t.product_id = src.product_id\nWHEN MATCHED THEN UPDATE SET\n  product_key = src.product_key,\n  sku = src.sku,\n  product_name = src.product_name,\n  category = src.category,\n  brand = src.brand,\n  list_price_centavos = src.list_price_centavos,\n  is_active = src.is_active\nWHEN NOT MATCHED THEN INSERT (product_key, product_id, sku, product_name, category, brand, list_price_centavos, is_active)\nVALUES (src.product_key, src.product_id, src.sku, src.product_name, src.category, src.brand, src.list_price_centavos, src.is_active)\nWHEN NOT MATCHED BY SOURCE AND TRUE THEN DELETE",
+          "MERGE INTO dim_customer AS t\nUSING stg_customers AS src\nON t.customer_id = src.customer_id\nWHEN MATCHED THEN UPDATE SET\n  customer_key = src.customer_key,\n  given_name = src.given_name,\n  family_name = src.family_name,\n  city = src.city,\n  state_code = src.state_code,\n  state_name = src.state_name,\n  loyalty_tier = src.loyalty_tier,\n  email = src.email\nWHEN NOT MATCHED THEN INSERT (customer_key, customer_id, given_name, family_name, city, state_code, state_name, loyalty_tier, email)\nVALUES (src.customer_key, src.customer_id, src.given_name, src.family_name, src.city, src.state_code, src.state_name, src.loyalty_tier, src.email)\nWHEN NOT MATCHED BY SOURCE AND TRUE THEN DELETE",
+          "MERGE INTO dim_store AS t\nUSING stg_stores AS src\nON t.store_id = src.store_id\nWHEN MATCHED THEN UPDATE SET\n  store_key = src.store_key,\n  store_name = src.store_name,\n  channel = src.channel,\n  city = src.city,\n  state_code = src.state_code,\n  state_name = src.state_name,\n  postal_code = src.postal_code,\n  opened_on = src.opened_on,\n  is_active = src.is_active\nWHEN NOT MATCHED THEN INSERT (store_key, store_id, store_name, channel, city, state_code, state_name, postal_code, opened_on, is_active)\nVALUES (src.store_key, src.store_id, src.store_name, src.channel, src.city, src.state_code, src.state_name, src.postal_code, src.opened_on, src.is_active)\nWHEN NOT MATCHED BY SOURCE AND TRUE THEN DELETE",
+          "CREATE OR REPLACE TABLE int_order_line_enriched AS\nSELECT\n      s.order_line_id,\n      s.order_id,\n      d.date_key,\n      p.product_key,\n      c.customer_key,\n      st.store_key,\n      s.quantity,\n      s.unit_price_centavos,\n      s.line_amount_centavos,\n      s.amount_mxn,\n      s.line_type,\n      s.channel,\n      s.status,\n      s.category,\n      s.order_ts,\n      s.order_date,\n      s.product_id,\n      s.customer_id,\n      s.store_id\nFROM stg_order_lines AS s\nJOIN dim_product AS p\n  ON s.product_id = p.product_id\nJOIN dim_customer AS c\n  ON s.customer_id = c.customer_id\nJOIN dim_store AS st\n  ON s.store_id = st.store_id\nJOIN dim_date AS d\n  ON s.order_date = d.full_date",
+          "MERGE INTO fact_order_lines AS t\nUSING int_order_line_enriched AS src\nON t.order_line_id = src.order_line_id AND t.order_date = src.order_date\n  AND t.order_date BETWEEN DATE '2026-03-03' AND DATE '2026-03-03'\nWHEN MATCHED THEN UPDATE SET\n  order_id = src.order_id,\n  date_key = src.date_key,\n  product_key = src.product_key,\n  customer_key = src.customer_key,\n  store_key = src.store_key,\n  quantity = src.quantity,\n  unit_price_centavos = src.unit_price_centavos,\n  line_amount_centavos = src.line_amount_centavos,\n  amount_mxn = src.amount_mxn,\n  line_type = src.line_type,\n  channel = src.channel,\n  status = src.status,\n  category = src.category,\n  order_ts = src.order_ts,\n  product_id = src.product_id,\n  customer_id = src.customer_id,\n  store_id = src.store_id\nWHEN NOT MATCHED THEN INSERT (order_line_id, order_id, date_key, product_key, customer_key, store_key, quantity, unit_price_centavos, line_amount_centavos, amount_mxn, line_type, channel, status, category, order_ts, order_date, product_id, customer_id, store_id)\nVALUES (src.order_line_id, src.order_id, src.date_key, src.product_key, src.customer_key, src.store_key, src.quantity, src.unit_price_centavos, src.line_amount_centavos, src.amount_mxn, src.line_type, src.channel, src.status, src.category, src.order_ts, src.order_date, src.product_id, src.customer_id, src.store_id)\nWHEN NOT MATCHED BY SOURCE AND t.order_date BETWEEN DATE '2026-03-03' AND DATE '2026-03-03' THEN DELETE"
+        ],
+        "data_quality": [
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM fact_order_lines\n  \n  GROUP BY order_line_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COUNT(*) AS violations FROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-03' AND DATE '2026-03-03') AND (order_line_id IS NULL OR order_id IS NULL OR date_key IS NULL\n  OR product_key IS NULL OR customer_key IS NULL OR store_key IS NULL\n  OR quantity IS NULL OR unit_price_centavos IS NULL OR line_amount_centavos IS NULL\n  OR amount_mxn IS NULL OR order_date IS NULL OR product_id IS NULL\n  OR customer_id IS NULL OR store_id IS NULL OR line_type IS NULL\n  OR status IS NULL OR channel IS NULL OR category IS NULL)",
+          "SELECT COUNT(*) AS violations FROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-03' AND DATE '2026-03-03') AND ((line_type = 'sale' AND (quantity <= 0 OR line_amount_centavos <= 0))\n  OR (line_type = 'return' AND (quantity >= 0 OR line_amount_centavos >= 0))\n  OR line_type NOT IN ('sale', 'return')\n  OR status NOT IN ('completed', 'cancelled')\n  OR channel NOT IN ('online', 'physical'))",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-03' AND DATE '2026-03-03') AND (quantity * unit_price_centavos <> line_amount_centavos)",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-03' AND DATE '2026-03-03') AND (line_amount_centavos <> CAST(ROUND(amount_mxn * 100, 0) AS BIGINT))",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_product AS p\n  ON f.product_key = p.product_key\n AND f.product_id = p.product_id\nWHERE (p.product_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-03' AND DATE '2026-03-03')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_customer AS c\n  ON f.customer_key = c.customer_key\n AND f.customer_id = c.customer_id\nWHERE (c.customer_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-03' AND DATE '2026-03-03')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_store AS st\n  ON f.store_key = st.store_key\n AND f.store_id = st.store_id\nWHERE (st.store_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-03' AND DATE '2026-03-03')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_date AS d\n  ON f.date_key = d.date_key\n AND f.order_date = d.full_date\nWHERE (d.date_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-03' AND DATE '2026-03-03')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nJOIN dim_product AS p\n  ON f.product_key = p.product_key\nWHERE (f.category <> p.category) AND (f.order_date BETWEEN DATE '2026-03-03' AND DATE '2026-03-03')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nJOIN dim_store AS st\n  ON f.store_key = st.store_key\nWHERE (f.channel <> st.channel) AND (f.order_date BETWEEN DATE '2026-03-03' AND DATE '2026-03-03')",
+          "SELECT ABS(\n  (SELECT COUNT(*) FROM stg_order_lines) -\n  (SELECT COUNT(*) FROM fact_order_lines WHERE order_date BETWEEN DATE '2026-03-03' AND DATE '2026-03-03')\n) AS violations",
+          "SELECT CASE\n  WHEN COALESCE((SELECT MAX(order_date) FROM fact_order_lines), DATE '1900-01-01')\n       >= DATE '2026-03-03' THEN 0\n  ELSE 1\nEND AS violations",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM dim_product\n  \n  GROUP BY product_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM dim_customer\n  \n  GROUP BY customer_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM dim_store\n  \n  GROUP BY store_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COUNT(*) AS violations\nFROM stg_daily_inventory\nWHERE store_id IS NULL\n   OR product_id IS NULL\n   OR snapshot_date IS NULL\n   OR on_hand_units IS NULL\n   OR reserved_units IS NULL\n   OR on_hand_units < 0\n   OR reserved_units < 0\n   OR reserved_units > on_hand_units",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM stg_daily_inventory\n  \n  GROUP BY store_id, product_id, snapshot_date\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COUNT(*) AS violations\nFROM stg_daily_inventory AS i\nLEFT JOIN dim_store AS st\n  ON i.store_id = st.store_id\nWHERE st.store_id IS NULL",
+          "SELECT COUNT(*) AS violations\nFROM stg_daily_inventory AS i\nLEFT JOIN dim_product AS p\n  ON i.product_id = p.product_id\nWHERE p.product_id IS NULL",
+          "SELECT COUNT(*) AS violations\nFROM raw_order_lines\nWHERE extract_date <> order_date",
+          "SELECT COUNT(*) AS violations\nFROM raw_daily_inventory\nWHERE extract_date <> snapshot_date"
+        ]
+      },
+      "quality_names": [
+        "fact_order_line_id_unique",
+        "fact_required_not_null",
+        "fact_line_sign",
+        "fact_line_amount_matches_quantity",
+        "fact_amount_mxn_matches_centavos",
+        "fact_product_fk",
+        "fact_customer_fk",
+        "fact_store_fk",
+        "fact_date_fk",
+        "fact_category_matches_product",
+        "fact_channel_matches_store",
+        "staging_matches_fact_rows",
+        "fact_freshness",
+        "dim_product_id_unique",
+        "dim_customer_id_unique",
+        "dim_store_id_unique",
+        "inventory_not_null_or_negative",
+        "inventory_unique",
+        "inventory_store_fk",
+        "inventory_product_fk",
+        "raw_extract_date_matches_order_date",
+        "raw_inventory_extract_date_matches_snapshot"
+      ],
+      "expected": {
+        "fact_rows": 86,
+        "cents": 26284080,
+        "staging_rows": 44,
+        "by_day": [
+          {
+            "order_date": "2026-03-02",
+            "rows": 42,
+            "cents": 12836567
+          },
+          {
+            "order_date": "2026-03-03",
+            "rows": 44,
+            "cents": 13447513
+          }
+        ]
+      },
+      "pipeline": {
+        "order_line_files_read": 1,
+        "fact_rows_in_window": 44,
+        "staging_order_lines": 44,
+        "quality_passed": true
+      }
+    },
+    "inc-2026-03-04": {
+      "logical_date": "2026-03-04",
+      "lookback_days": 0,
+      "window": [
+        "2026-03-04"
+      ],
+      "correction": false,
+      "files": {
+        "order_lines": [
+          "landing/order_lines/dt=2026-03-04/part-000.parquet"
+        ],
+        "products": [
+          "landing/products/dt=2026-03-04/part-000.parquet"
+        ],
+        "customers": [
+          "landing/customers/dt=2026-03-04/part-000.parquet"
+        ],
+        "stores": [
+          "landing/stores/dt=2026-03-04/part-000.parquet"
+        ],
+        "daily_inventory": [
+          "landing/daily_inventory/dt=2026-03-04/part-000.parquet"
+        ]
+      },
+      "tasks": {
+        "resolve_window": [
+          "SELECT DATE '2026-03-04' AS logical_date, DATE '2026-03-04' AS window_start, DATE '2026-03-04' AS window_end, 0 AS lookback_days"
+        ],
+        "generate_and_land": [
+          "(SELECT 'order_lines' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/order_lines/dt=2026-03-04/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'products' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/products/dt=2026-03-04/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'customers' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/customers/dt=2026-03-04/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'stores' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/stores/dt=2026-03-04/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'daily_inventory' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/daily_inventory/dt=2026-03-04/part-000.parquet'], hive_partitioning=false)) ORDER BY entity"
+        ],
+        "load_raw_and_stage": [
+          "DELETE FROM raw_order_lines WHERE extract_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04'",
+          "INSERT INTO raw_order_lines (order_line_id, order_id, customer_id, store_id, product_id, quantity, unit_price_centavos, line_amount_centavos, line_type, channel, status, category, order_ts, order_date, extract_ts, extract_date, source_file) SELECT order_line_id, order_id, customer_id, store_id, product_id, quantity, unit_price_centavos, line_amount_centavos, line_type, channel, status, category, order_ts, order_date, extract_ts, extract_date, source_file FROM read_parquet(['landing/order_lines/dt=2026-03-04/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_products WHERE extract_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04'",
+          "INSERT INTO raw_products (product_key, product_id, sku, product_name, category, brand, list_price_centavos, is_active, extract_ts, extract_date, source_file) SELECT product_key, product_id, sku, product_name, category, brand, list_price_centavos, is_active, extract_ts, extract_date, source_file FROM read_parquet(['landing/products/dt=2026-03-04/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_customers WHERE extract_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04'",
+          "INSERT INTO raw_customers (customer_key, customer_id, given_name, family_name, city, state_code, state_name, loyalty_tier, email, extract_ts, extract_date, source_file) SELECT customer_key, customer_id, given_name, family_name, city, state_code, state_name, loyalty_tier, email, extract_ts, extract_date, source_file FROM read_parquet(['landing/customers/dt=2026-03-04/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_stores WHERE extract_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04'",
+          "INSERT INTO raw_stores (store_key, store_id, store_name, channel, city, state_code, state_name, postal_code, opened_on, is_active, extract_ts, extract_date, source_file) SELECT store_key, store_id, store_name, channel, city, state_code, state_name, postal_code, opened_on, is_active, extract_ts, extract_date, source_file FROM read_parquet(['landing/stores/dt=2026-03-04/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_daily_inventory WHERE extract_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04'",
+          "INSERT INTO raw_daily_inventory (store_id, product_id, snapshot_date, on_hand_units, reserved_units, extract_ts, extract_date, source_file) SELECT store_id, product_id, snapshot_date, on_hand_units, reserved_units, extract_ts, extract_date, source_file FROM read_parquet(['landing/daily_inventory/dt=2026-03-04/part-000.parquet'], hive_partitioning=false)",
+          "CREATE OR REPLACE TABLE stg_order_lines AS\nSELECT\n      order_line_id,\n      order_id,\n      customer_id,\n      store_id,\n      product_id,\n      quantity,\n      unit_price_centavos,\n      line_amount_centavos,\n      CAST(line_amount_centavos AS DECIMAL(18, 2)) / 100 AS amount_mxn,\n      line_type,\n      channel,\n      status,\n      category,\n      order_ts,\n      order_date\nFROM (\n  SELECT\n      order_line_id,\n      order_id,\n      customer_id,\n      store_id,\n      product_id,\n      quantity,\n      unit_price_centavos,\n      line_amount_centavos,\n      line_type,\n      channel,\n      status,\n      category,\n      order_ts,\n      order_date,\n      ROW_NUMBER() OVER (\n        PARTITION BY order_line_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_order_lines\n  WHERE order_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04'\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_products AS\nSELECT\n      product_key,\n      product_id,\n      sku,\n      product_name,\n      category,\n      brand,\n      list_price_centavos,\n      is_active\nFROM (\n  SELECT\n      product_key,\n      product_id,\n      sku,\n      product_name,\n      category,\n      brand,\n      list_price_centavos,\n      is_active,\n      ROW_NUMBER() OVER (\n        PARTITION BY product_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_products\n  WHERE extract_date = (SELECT MAX(extract_date) FROM raw_products)\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_customers AS\nSELECT\n      customer_key,\n      customer_id,\n      given_name,\n      family_name,\n      city,\n      state_code,\n      state_name,\n      loyalty_tier,\n      email\nFROM (\n  SELECT\n      customer_key,\n      customer_id,\n      given_name,\n      family_name,\n      city,\n      state_code,\n      state_name,\n      loyalty_tier,\n      email,\n      ROW_NUMBER() OVER (\n        PARTITION BY customer_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_customers\n  WHERE extract_date = (SELECT MAX(extract_date) FROM raw_customers)\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_stores AS\nSELECT\n      store_key,\n      store_id,\n      store_name,\n      channel,\n      city,\n      state_code,\n      state_name,\n      postal_code,\n      opened_on,\n      is_active\nFROM (\n  SELECT\n      store_key,\n      store_id,\n      store_name,\n      channel,\n      city,\n      state_code,\n      state_name,\n      postal_code,\n      opened_on,\n      is_active,\n      ROW_NUMBER() OVER (\n        PARTITION BY store_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_stores\n  WHERE extract_date = (SELECT MAX(extract_date) FROM raw_stores)\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_daily_inventory AS\nSELECT\n      store_id,\n      product_id,\n      snapshot_date,\n      on_hand_units,\n      reserved_units\nFROM (\n  SELECT\n      store_id,\n      product_id,\n      snapshot_date,\n      on_hand_units,\n      reserved_units,\n      ROW_NUMBER() OVER (\n        PARTITION BY store_id, product_id, snapshot_date\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_daily_inventory\n  WHERE snapshot_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04'\n) ranked\nWHERE rn = 1"
+        ],
+        "publish_marts": [
+          "MERGE INTO dim_product AS t\nUSING stg_products AS src\nON t.product_id = src.product_id\nWHEN MATCHED THEN UPDATE SET\n  product_key = src.product_key,\n  sku = src.sku,\n  product_name = src.product_name,\n  category = src.category,\n  brand = src.brand,\n  list_price_centavos = src.list_price_centavos,\n  is_active = src.is_active\nWHEN NOT MATCHED THEN INSERT (product_key, product_id, sku, product_name, category, brand, list_price_centavos, is_active)\nVALUES (src.product_key, src.product_id, src.sku, src.product_name, src.category, src.brand, src.list_price_centavos, src.is_active)\nWHEN NOT MATCHED BY SOURCE AND TRUE THEN DELETE",
+          "MERGE INTO dim_customer AS t\nUSING stg_customers AS src\nON t.customer_id = src.customer_id\nWHEN MATCHED THEN UPDATE SET\n  customer_key = src.customer_key,\n  given_name = src.given_name,\n  family_name = src.family_name,\n  city = src.city,\n  state_code = src.state_code,\n  state_name = src.state_name,\n  loyalty_tier = src.loyalty_tier,\n  email = src.email\nWHEN NOT MATCHED THEN INSERT (customer_key, customer_id, given_name, family_name, city, state_code, state_name, loyalty_tier, email)\nVALUES (src.customer_key, src.customer_id, src.given_name, src.family_name, src.city, src.state_code, src.state_name, src.loyalty_tier, src.email)\nWHEN NOT MATCHED BY SOURCE AND TRUE THEN DELETE",
+          "MERGE INTO dim_store AS t\nUSING stg_stores AS src\nON t.store_id = src.store_id\nWHEN MATCHED THEN UPDATE SET\n  store_key = src.store_key,\n  store_name = src.store_name,\n  channel = src.channel,\n  city = src.city,\n  state_code = src.state_code,\n  state_name = src.state_name,\n  postal_code = src.postal_code,\n  opened_on = src.opened_on,\n  is_active = src.is_active\nWHEN NOT MATCHED THEN INSERT (store_key, store_id, store_name, channel, city, state_code, state_name, postal_code, opened_on, is_active)\nVALUES (src.store_key, src.store_id, src.store_name, src.channel, src.city, src.state_code, src.state_name, src.postal_code, src.opened_on, src.is_active)\nWHEN NOT MATCHED BY SOURCE AND TRUE THEN DELETE",
+          "CREATE OR REPLACE TABLE int_order_line_enriched AS\nSELECT\n      s.order_line_id,\n      s.order_id,\n      d.date_key,\n      p.product_key,\n      c.customer_key,\n      st.store_key,\n      s.quantity,\n      s.unit_price_centavos,\n      s.line_amount_centavos,\n      s.amount_mxn,\n      s.line_type,\n      s.channel,\n      s.status,\n      s.category,\n      s.order_ts,\n      s.order_date,\n      s.product_id,\n      s.customer_id,\n      s.store_id\nFROM stg_order_lines AS s\nJOIN dim_product AS p\n  ON s.product_id = p.product_id\nJOIN dim_customer AS c\n  ON s.customer_id = c.customer_id\nJOIN dim_store AS st\n  ON s.store_id = st.store_id\nJOIN dim_date AS d\n  ON s.order_date = d.full_date",
+          "MERGE INTO fact_order_lines AS t\nUSING int_order_line_enriched AS src\nON t.order_line_id = src.order_line_id AND t.order_date = src.order_date\n  AND t.order_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04'\nWHEN MATCHED THEN UPDATE SET\n  order_id = src.order_id,\n  date_key = src.date_key,\n  product_key = src.product_key,\n  customer_key = src.customer_key,\n  store_key = src.store_key,\n  quantity = src.quantity,\n  unit_price_centavos = src.unit_price_centavos,\n  line_amount_centavos = src.line_amount_centavos,\n  amount_mxn = src.amount_mxn,\n  line_type = src.line_type,\n  channel = src.channel,\n  status = src.status,\n  category = src.category,\n  order_ts = src.order_ts,\n  product_id = src.product_id,\n  customer_id = src.customer_id,\n  store_id = src.store_id\nWHEN NOT MATCHED THEN INSERT (order_line_id, order_id, date_key, product_key, customer_key, store_key, quantity, unit_price_centavos, line_amount_centavos, amount_mxn, line_type, channel, status, category, order_ts, order_date, product_id, customer_id, store_id)\nVALUES (src.order_line_id, src.order_id, src.date_key, src.product_key, src.customer_key, src.store_key, src.quantity, src.unit_price_centavos, src.line_amount_centavos, src.amount_mxn, src.line_type, src.channel, src.status, src.category, src.order_ts, src.order_date, src.product_id, src.customer_id, src.store_id)\nWHEN NOT MATCHED BY SOURCE AND t.order_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04' THEN DELETE"
+        ],
+        "data_quality": [
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM fact_order_lines\n  \n  GROUP BY order_line_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COUNT(*) AS violations FROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04') AND (order_line_id IS NULL OR order_id IS NULL OR date_key IS NULL\n  OR product_key IS NULL OR customer_key IS NULL OR store_key IS NULL\n  OR quantity IS NULL OR unit_price_centavos IS NULL OR line_amount_centavos IS NULL\n  OR amount_mxn IS NULL OR order_date IS NULL OR product_id IS NULL\n  OR customer_id IS NULL OR store_id IS NULL OR line_type IS NULL\n  OR status IS NULL OR channel IS NULL OR category IS NULL)",
+          "SELECT COUNT(*) AS violations FROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04') AND ((line_type = 'sale' AND (quantity <= 0 OR line_amount_centavos <= 0))\n  OR (line_type = 'return' AND (quantity >= 0 OR line_amount_centavos >= 0))\n  OR line_type NOT IN ('sale', 'return')\n  OR status NOT IN ('completed', 'cancelled')\n  OR channel NOT IN ('online', 'physical'))",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04') AND (quantity * unit_price_centavos <> line_amount_centavos)",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04') AND (line_amount_centavos <> CAST(ROUND(amount_mxn * 100, 0) AS BIGINT))",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_product AS p\n  ON f.product_key = p.product_key\n AND f.product_id = p.product_id\nWHERE (p.product_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_customer AS c\n  ON f.customer_key = c.customer_key\n AND f.customer_id = c.customer_id\nWHERE (c.customer_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_store AS st\n  ON f.store_key = st.store_key\n AND f.store_id = st.store_id\nWHERE (st.store_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_date AS d\n  ON f.date_key = d.date_key\n AND f.order_date = d.full_date\nWHERE (d.date_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nJOIN dim_product AS p\n  ON f.product_key = p.product_key\nWHERE (f.category <> p.category) AND (f.order_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nJOIN dim_store AS st\n  ON f.store_key = st.store_key\nWHERE (f.channel <> st.channel) AND (f.order_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04')",
+          "SELECT ABS(\n  (SELECT COUNT(*) FROM stg_order_lines) -\n  (SELECT COUNT(*) FROM fact_order_lines WHERE order_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04')\n) AS violations",
+          "SELECT CASE\n  WHEN COALESCE((SELECT MAX(order_date) FROM fact_order_lines), DATE '1900-01-01')\n       >= DATE '2026-03-04' THEN 0\n  ELSE 1\nEND AS violations",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM dim_product\n  \n  GROUP BY product_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM dim_customer\n  \n  GROUP BY customer_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM dim_store\n  \n  GROUP BY store_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COUNT(*) AS violations\nFROM stg_daily_inventory\nWHERE store_id IS NULL\n   OR product_id IS NULL\n   OR snapshot_date IS NULL\n   OR on_hand_units IS NULL\n   OR reserved_units IS NULL\n   OR on_hand_units < 0\n   OR reserved_units < 0\n   OR reserved_units > on_hand_units",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM stg_daily_inventory\n  \n  GROUP BY store_id, product_id, snapshot_date\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COUNT(*) AS violations\nFROM stg_daily_inventory AS i\nLEFT JOIN dim_store AS st\n  ON i.store_id = st.store_id\nWHERE st.store_id IS NULL",
+          "SELECT COUNT(*) AS violations\nFROM stg_daily_inventory AS i\nLEFT JOIN dim_product AS p\n  ON i.product_id = p.product_id\nWHERE p.product_id IS NULL",
+          "SELECT COUNT(*) AS violations\nFROM raw_order_lines\nWHERE extract_date <> order_date",
+          "SELECT COUNT(*) AS violations\nFROM raw_daily_inventory\nWHERE extract_date <> snapshot_date"
+        ]
+      },
+      "quality_names": [
+        "fact_order_line_id_unique",
+        "fact_required_not_null",
+        "fact_line_sign",
+        "fact_line_amount_matches_quantity",
+        "fact_amount_mxn_matches_centavos",
+        "fact_product_fk",
+        "fact_customer_fk",
+        "fact_store_fk",
+        "fact_date_fk",
+        "fact_category_matches_product",
+        "fact_channel_matches_store",
+        "staging_matches_fact_rows",
+        "fact_freshness",
+        "dim_product_id_unique",
+        "dim_customer_id_unique",
+        "dim_store_id_unique",
+        "inventory_not_null_or_negative",
+        "inventory_unique",
+        "inventory_store_fk",
+        "inventory_product_fk",
+        "raw_extract_date_matches_order_date",
+        "raw_inventory_extract_date_matches_snapshot"
+      ],
+      "expected": {
+        "fact_rows": 130,
+        "cents": 39377890,
+        "staging_rows": 44,
+        "by_day": [
+          {
+            "order_date": "2026-03-02",
+            "rows": 42,
+            "cents": 12836567
+          },
+          {
+            "order_date": "2026-03-03",
+            "rows": 44,
+            "cents": 13447513
+          },
+          {
+            "order_date": "2026-03-04",
+            "rows": 44,
+            "cents": 13093810
+          }
+        ]
+      },
+      "pipeline": {
+        "order_line_files_read": 1,
+        "fact_rows_in_window": 44,
+        "staging_order_lines": 44,
+        "quality_passed": true
+      }
+    },
+    "inc-2026-03-05": {
+      "logical_date": "2026-03-05",
+      "lookback_days": 0,
+      "window": [
+        "2026-03-05"
+      ],
+      "correction": false,
+      "files": {
+        "order_lines": [
+          "landing/order_lines/dt=2026-03-05/part-000.parquet"
+        ],
+        "products": [
+          "landing/products/dt=2026-03-05/part-000.parquet"
+        ],
+        "customers": [
+          "landing/customers/dt=2026-03-05/part-000.parquet"
+        ],
+        "stores": [
+          "landing/stores/dt=2026-03-05/part-000.parquet"
+        ],
+        "daily_inventory": [
+          "landing/daily_inventory/dt=2026-03-05/part-000.parquet"
+        ]
+      },
+      "tasks": {
+        "resolve_window": [
+          "SELECT DATE '2026-03-05' AS logical_date, DATE '2026-03-05' AS window_start, DATE '2026-03-05' AS window_end, 0 AS lookback_days"
+        ],
+        "generate_and_land": [
+          "(SELECT 'order_lines' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/order_lines/dt=2026-03-05/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'products' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/products/dt=2026-03-05/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'customers' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/customers/dt=2026-03-05/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'stores' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/stores/dt=2026-03-05/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'daily_inventory' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/daily_inventory/dt=2026-03-05/part-000.parquet'], hive_partitioning=false)) ORDER BY entity"
+        ],
+        "load_raw_and_stage": [
+          "DELETE FROM raw_order_lines WHERE extract_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-05'",
+          "INSERT INTO raw_order_lines (order_line_id, order_id, customer_id, store_id, product_id, quantity, unit_price_centavos, line_amount_centavos, line_type, channel, status, category, order_ts, order_date, extract_ts, extract_date, source_file) SELECT order_line_id, order_id, customer_id, store_id, product_id, quantity, unit_price_centavos, line_amount_centavos, line_type, channel, status, category, order_ts, order_date, extract_ts, extract_date, source_file FROM read_parquet(['landing/order_lines/dt=2026-03-05/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_products WHERE extract_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-05'",
+          "INSERT INTO raw_products (product_key, product_id, sku, product_name, category, brand, list_price_centavos, is_active, extract_ts, extract_date, source_file) SELECT product_key, product_id, sku, product_name, category, brand, list_price_centavos, is_active, extract_ts, extract_date, source_file FROM read_parquet(['landing/products/dt=2026-03-05/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_customers WHERE extract_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-05'",
+          "INSERT INTO raw_customers (customer_key, customer_id, given_name, family_name, city, state_code, state_name, loyalty_tier, email, extract_ts, extract_date, source_file) SELECT customer_key, customer_id, given_name, family_name, city, state_code, state_name, loyalty_tier, email, extract_ts, extract_date, source_file FROM read_parquet(['landing/customers/dt=2026-03-05/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_stores WHERE extract_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-05'",
+          "INSERT INTO raw_stores (store_key, store_id, store_name, channel, city, state_code, state_name, postal_code, opened_on, is_active, extract_ts, extract_date, source_file) SELECT store_key, store_id, store_name, channel, city, state_code, state_name, postal_code, opened_on, is_active, extract_ts, extract_date, source_file FROM read_parquet(['landing/stores/dt=2026-03-05/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_daily_inventory WHERE extract_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-05'",
+          "INSERT INTO raw_daily_inventory (store_id, product_id, snapshot_date, on_hand_units, reserved_units, extract_ts, extract_date, source_file) SELECT store_id, product_id, snapshot_date, on_hand_units, reserved_units, extract_ts, extract_date, source_file FROM read_parquet(['landing/daily_inventory/dt=2026-03-05/part-000.parquet'], hive_partitioning=false)",
+          "CREATE OR REPLACE TABLE stg_order_lines AS\nSELECT\n      order_line_id,\n      order_id,\n      customer_id,\n      store_id,\n      product_id,\n      quantity,\n      unit_price_centavos,\n      line_amount_centavos,\n      CAST(line_amount_centavos AS DECIMAL(18, 2)) / 100 AS amount_mxn,\n      line_type,\n      channel,\n      status,\n      category,\n      order_ts,\n      order_date\nFROM (\n  SELECT\n      order_line_id,\n      order_id,\n      customer_id,\n      store_id,\n      product_id,\n      quantity,\n      unit_price_centavos,\n      line_amount_centavos,\n      line_type,\n      channel,\n      status,\n      category,\n      order_ts,\n      order_date,\n      ROW_NUMBER() OVER (\n        PARTITION BY order_line_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_order_lines\n  WHERE order_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-05'\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_products AS\nSELECT\n      product_key,\n      product_id,\n      sku,\n      product_name,\n      category,\n      brand,\n      list_price_centavos,\n      is_active\nFROM (\n  SELECT\n      product_key,\n      product_id,\n      sku,\n      product_name,\n      category,\n      brand,\n      list_price_centavos,\n      is_active,\n      ROW_NUMBER() OVER (\n        PARTITION BY product_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_products\n  WHERE extract_date = (SELECT MAX(extract_date) FROM raw_products)\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_customers AS\nSELECT\n      customer_key,\n      customer_id,\n      given_name,\n      family_name,\n      city,\n      state_code,\n      state_name,\n      loyalty_tier,\n      email\nFROM (\n  SELECT\n      customer_key,\n      customer_id,\n      given_name,\n      family_name,\n      city,\n      state_code,\n      state_name,\n      loyalty_tier,\n      email,\n      ROW_NUMBER() OVER (\n        PARTITION BY customer_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_customers\n  WHERE extract_date = (SELECT MAX(extract_date) FROM raw_customers)\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_stores AS\nSELECT\n      store_key,\n      store_id,\n      store_name,\n      channel,\n      city,\n      state_code,\n      state_name,\n      postal_code,\n      opened_on,\n      is_active\nFROM (\n  SELECT\n      store_key,\n      store_id,\n      store_name,\n      channel,\n      city,\n      state_code,\n      state_name,\n      postal_code,\n      opened_on,\n      is_active,\n      ROW_NUMBER() OVER (\n        PARTITION BY store_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_stores\n  WHERE extract_date = (SELECT MAX(extract_date) FROM raw_stores)\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_daily_inventory AS\nSELECT\n      store_id,\n      product_id,\n      snapshot_date,\n      on_hand_units,\n      reserved_units\nFROM (\n  SELECT\n      store_id,\n      product_id,\n      snapshot_date,\n      on_hand_units,\n      reserved_units,\n      ROW_NUMBER() OVER (\n        PARTITION BY store_id, product_id, snapshot_date\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_daily_inventory\n  WHERE snapshot_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-05'\n) ranked\nWHERE rn = 1"
+        ],
+        "publish_marts": [
+          "MERGE INTO dim_product AS t\nUSING stg_products AS src\nON t.product_id = src.product_id\nWHEN MATCHED THEN UPDATE SET\n  product_key = src.product_key,\n  sku = src.sku,\n  product_name = src.product_name,\n  category = src.category,\n  brand = src.brand,\n  list_price_centavos = src.list_price_centavos,\n  is_active = src.is_active\nWHEN NOT MATCHED THEN INSERT (product_key, product_id, sku, product_name, category, brand, list_price_centavos, is_active)\nVALUES (src.product_key, src.product_id, src.sku, src.product_name, src.category, src.brand, src.list_price_centavos, src.is_active)\nWHEN NOT MATCHED BY SOURCE AND TRUE THEN DELETE",
+          "MERGE INTO dim_customer AS t\nUSING stg_customers AS src\nON t.customer_id = src.customer_id\nWHEN MATCHED THEN UPDATE SET\n  customer_key = src.customer_key,\n  given_name = src.given_name,\n  family_name = src.family_name,\n  city = src.city,\n  state_code = src.state_code,\n  state_name = src.state_name,\n  loyalty_tier = src.loyalty_tier,\n  email = src.email\nWHEN NOT MATCHED THEN INSERT (customer_key, customer_id, given_name, family_name, city, state_code, state_name, loyalty_tier, email)\nVALUES (src.customer_key, src.customer_id, src.given_name, src.family_name, src.city, src.state_code, src.state_name, src.loyalty_tier, src.email)\nWHEN NOT MATCHED BY SOURCE AND TRUE THEN DELETE",
+          "MERGE INTO dim_store AS t\nUSING stg_stores AS src\nON t.store_id = src.store_id\nWHEN MATCHED THEN UPDATE SET\n  store_key = src.store_key,\n  store_name = src.store_name,\n  channel = src.channel,\n  city = src.city,\n  state_code = src.state_code,\n  state_name = src.state_name,\n  postal_code = src.postal_code,\n  opened_on = src.opened_on,\n  is_active = src.is_active\nWHEN NOT MATCHED THEN INSERT (store_key, store_id, store_name, channel, city, state_code, state_name, postal_code, opened_on, is_active)\nVALUES (src.store_key, src.store_id, src.store_name, src.channel, src.city, src.state_code, src.state_name, src.postal_code, src.opened_on, src.is_active)\nWHEN NOT MATCHED BY SOURCE AND TRUE THEN DELETE",
+          "CREATE OR REPLACE TABLE int_order_line_enriched AS\nSELECT\n      s.order_line_id,\n      s.order_id,\n      d.date_key,\n      p.product_key,\n      c.customer_key,\n      st.store_key,\n      s.quantity,\n      s.unit_price_centavos,\n      s.line_amount_centavos,\n      s.amount_mxn,\n      s.line_type,\n      s.channel,\n      s.status,\n      s.category,\n      s.order_ts,\n      s.order_date,\n      s.product_id,\n      s.customer_id,\n      s.store_id\nFROM stg_order_lines AS s\nJOIN dim_product AS p\n  ON s.product_id = p.product_id\nJOIN dim_customer AS c\n  ON s.customer_id = c.customer_id\nJOIN dim_store AS st\n  ON s.store_id = st.store_id\nJOIN dim_date AS d\n  ON s.order_date = d.full_date",
+          "MERGE INTO fact_order_lines AS t\nUSING int_order_line_enriched AS src\nON t.order_line_id = src.order_line_id AND t.order_date = src.order_date\n  AND t.order_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-05'\nWHEN MATCHED THEN UPDATE SET\n  order_id = src.order_id,\n  date_key = src.date_key,\n  product_key = src.product_key,\n  customer_key = src.customer_key,\n  store_key = src.store_key,\n  quantity = src.quantity,\n  unit_price_centavos = src.unit_price_centavos,\n  line_amount_centavos = src.line_amount_centavos,\n  amount_mxn = src.amount_mxn,\n  line_type = src.line_type,\n  channel = src.channel,\n  status = src.status,\n  category = src.category,\n  order_ts = src.order_ts,\n  product_id = src.product_id,\n  customer_id = src.customer_id,\n  store_id = src.store_id\nWHEN NOT MATCHED THEN INSERT (order_line_id, order_id, date_key, product_key, customer_key, store_key, quantity, unit_price_centavos, line_amount_centavos, amount_mxn, line_type, channel, status, category, order_ts, order_date, product_id, customer_id, store_id)\nVALUES (src.order_line_id, src.order_id, src.date_key, src.product_key, src.customer_key, src.store_key, src.quantity, src.unit_price_centavos, src.line_amount_centavos, src.amount_mxn, src.line_type, src.channel, src.status, src.category, src.order_ts, src.order_date, src.product_id, src.customer_id, src.store_id)\nWHEN NOT MATCHED BY SOURCE AND t.order_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-05' THEN DELETE"
+        ],
+        "data_quality": [
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM fact_order_lines\n  \n  GROUP BY order_line_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COUNT(*) AS violations FROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-05') AND (order_line_id IS NULL OR order_id IS NULL OR date_key IS NULL\n  OR product_key IS NULL OR customer_key IS NULL OR store_key IS NULL\n  OR quantity IS NULL OR unit_price_centavos IS NULL OR line_amount_centavos IS NULL\n  OR amount_mxn IS NULL OR order_date IS NULL OR product_id IS NULL\n  OR customer_id IS NULL OR store_id IS NULL OR line_type IS NULL\n  OR status IS NULL OR channel IS NULL OR category IS NULL)",
+          "SELECT COUNT(*) AS violations FROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-05') AND ((line_type = 'sale' AND (quantity <= 0 OR line_amount_centavos <= 0))\n  OR (line_type = 'return' AND (quantity >= 0 OR line_amount_centavos >= 0))\n  OR line_type NOT IN ('sale', 'return')\n  OR status NOT IN ('completed', 'cancelled')\n  OR channel NOT IN ('online', 'physical'))",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-05') AND (quantity * unit_price_centavos <> line_amount_centavos)",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-05') AND (line_amount_centavos <> CAST(ROUND(amount_mxn * 100, 0) AS BIGINT))",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_product AS p\n  ON f.product_key = p.product_key\n AND f.product_id = p.product_id\nWHERE (p.product_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-05')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_customer AS c\n  ON f.customer_key = c.customer_key\n AND f.customer_id = c.customer_id\nWHERE (c.customer_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-05')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_store AS st\n  ON f.store_key = st.store_key\n AND f.store_id = st.store_id\nWHERE (st.store_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-05')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_date AS d\n  ON f.date_key = d.date_key\n AND f.order_date = d.full_date\nWHERE (d.date_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-05')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nJOIN dim_product AS p\n  ON f.product_key = p.product_key\nWHERE (f.category <> p.category) AND (f.order_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-05')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nJOIN dim_store AS st\n  ON f.store_key = st.store_key\nWHERE (f.channel <> st.channel) AND (f.order_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-05')",
+          "SELECT ABS(\n  (SELECT COUNT(*) FROM stg_order_lines) -\n  (SELECT COUNT(*) FROM fact_order_lines WHERE order_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-05')\n) AS violations",
+          "SELECT CASE\n  WHEN COALESCE((SELECT MAX(order_date) FROM fact_order_lines), DATE '1900-01-01')\n       >= DATE '2026-03-05' THEN 0\n  ELSE 1\nEND AS violations",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM dim_product\n  \n  GROUP BY product_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM dim_customer\n  \n  GROUP BY customer_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM dim_store\n  \n  GROUP BY store_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COUNT(*) AS violations\nFROM stg_daily_inventory\nWHERE store_id IS NULL\n   OR product_id IS NULL\n   OR snapshot_date IS NULL\n   OR on_hand_units IS NULL\n   OR reserved_units IS NULL\n   OR on_hand_units < 0\n   OR reserved_units < 0\n   OR reserved_units > on_hand_units",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM stg_daily_inventory\n  \n  GROUP BY store_id, product_id, snapshot_date\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COUNT(*) AS violations\nFROM stg_daily_inventory AS i\nLEFT JOIN dim_store AS st\n  ON i.store_id = st.store_id\nWHERE st.store_id IS NULL",
+          "SELECT COUNT(*) AS violations\nFROM stg_daily_inventory AS i\nLEFT JOIN dim_product AS p\n  ON i.product_id = p.product_id\nWHERE p.product_id IS NULL",
+          "SELECT COUNT(*) AS violations\nFROM raw_order_lines\nWHERE extract_date <> order_date",
+          "SELECT COUNT(*) AS violations\nFROM raw_daily_inventory\nWHERE extract_date <> snapshot_date"
+        ]
+      },
+      "quality_names": [
+        "fact_order_line_id_unique",
+        "fact_required_not_null",
+        "fact_line_sign",
+        "fact_line_amount_matches_quantity",
+        "fact_amount_mxn_matches_centavos",
+        "fact_product_fk",
+        "fact_customer_fk",
+        "fact_store_fk",
+        "fact_date_fk",
+        "fact_category_matches_product",
+        "fact_channel_matches_store",
+        "staging_matches_fact_rows",
+        "fact_freshness",
+        "dim_product_id_unique",
+        "dim_customer_id_unique",
+        "dim_store_id_unique",
+        "inventory_not_null_or_negative",
+        "inventory_unique",
+        "inventory_store_fk",
+        "inventory_product_fk",
+        "raw_extract_date_matches_order_date",
+        "raw_inventory_extract_date_matches_snapshot"
+      ],
+      "expected": {
+        "fact_rows": 176,
+        "cents": 54680105,
+        "staging_rows": 46,
+        "by_day": [
+          {
+            "order_date": "2026-03-02",
+            "rows": 42,
+            "cents": 12836567
+          },
+          {
+            "order_date": "2026-03-03",
+            "rows": 44,
+            "cents": 13447513
+          },
+          {
+            "order_date": "2026-03-04",
+            "rows": 44,
+            "cents": 13093810
+          },
+          {
+            "order_date": "2026-03-05",
+            "rows": 46,
+            "cents": 15302215
+          }
+        ]
+      },
+      "pipeline": {
+        "order_line_files_read": 1,
+        "fact_rows_in_window": 46,
+        "staging_order_lines": 46,
+        "quality_passed": true
+      }
+    },
+    "inc-2026-03-06": {
+      "logical_date": "2026-03-06",
+      "lookback_days": 0,
+      "window": [
+        "2026-03-06"
+      ],
+      "correction": false,
+      "files": {
+        "order_lines": [
+          "landing/order_lines/dt=2026-03-06/part-000.parquet"
+        ],
+        "products": [
+          "landing/products/dt=2026-03-06/part-000.parquet"
+        ],
+        "customers": [
+          "landing/customers/dt=2026-03-06/part-000.parquet"
+        ],
+        "stores": [
+          "landing/stores/dt=2026-03-06/part-000.parquet"
+        ],
+        "daily_inventory": [
+          "landing/daily_inventory/dt=2026-03-06/part-000.parquet"
+        ]
+      },
+      "tasks": {
+        "resolve_window": [
+          "SELECT DATE '2026-03-06' AS logical_date, DATE '2026-03-06' AS window_start, DATE '2026-03-06' AS window_end, 0 AS lookback_days"
+        ],
+        "generate_and_land": [
+          "(SELECT 'order_lines' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/order_lines/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'products' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/products/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'customers' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/customers/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'stores' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/stores/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'daily_inventory' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/daily_inventory/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)) ORDER BY entity"
+        ],
+        "load_raw_and_stage": [
+          "DELETE FROM raw_order_lines WHERE extract_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06'",
+          "INSERT INTO raw_order_lines (order_line_id, order_id, customer_id, store_id, product_id, quantity, unit_price_centavos, line_amount_centavos, line_type, channel, status, category, order_ts, order_date, extract_ts, extract_date, source_file) SELECT order_line_id, order_id, customer_id, store_id, product_id, quantity, unit_price_centavos, line_amount_centavos, line_type, channel, status, category, order_ts, order_date, extract_ts, extract_date, source_file FROM read_parquet(['landing/order_lines/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_products WHERE extract_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06'",
+          "INSERT INTO raw_products (product_key, product_id, sku, product_name, category, brand, list_price_centavos, is_active, extract_ts, extract_date, source_file) SELECT product_key, product_id, sku, product_name, category, brand, list_price_centavos, is_active, extract_ts, extract_date, source_file FROM read_parquet(['landing/products/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_customers WHERE extract_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06'",
+          "INSERT INTO raw_customers (customer_key, customer_id, given_name, family_name, city, state_code, state_name, loyalty_tier, email, extract_ts, extract_date, source_file) SELECT customer_key, customer_id, given_name, family_name, city, state_code, state_name, loyalty_tier, email, extract_ts, extract_date, source_file FROM read_parquet(['landing/customers/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_stores WHERE extract_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06'",
+          "INSERT INTO raw_stores (store_key, store_id, store_name, channel, city, state_code, state_name, postal_code, opened_on, is_active, extract_ts, extract_date, source_file) SELECT store_key, store_id, store_name, channel, city, state_code, state_name, postal_code, opened_on, is_active, extract_ts, extract_date, source_file FROM read_parquet(['landing/stores/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_daily_inventory WHERE extract_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06'",
+          "INSERT INTO raw_daily_inventory (store_id, product_id, snapshot_date, on_hand_units, reserved_units, extract_ts, extract_date, source_file) SELECT store_id, product_id, snapshot_date, on_hand_units, reserved_units, extract_ts, extract_date, source_file FROM read_parquet(['landing/daily_inventory/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)",
+          "CREATE OR REPLACE TABLE stg_order_lines AS\nSELECT\n      order_line_id,\n      order_id,\n      customer_id,\n      store_id,\n      product_id,\n      quantity,\n      unit_price_centavos,\n      line_amount_centavos,\n      CAST(line_amount_centavos AS DECIMAL(18, 2)) / 100 AS amount_mxn,\n      line_type,\n      channel,\n      status,\n      category,\n      order_ts,\n      order_date\nFROM (\n  SELECT\n      order_line_id,\n      order_id,\n      customer_id,\n      store_id,\n      product_id,\n      quantity,\n      unit_price_centavos,\n      line_amount_centavos,\n      line_type,\n      channel,\n      status,\n      category,\n      order_ts,\n      order_date,\n      ROW_NUMBER() OVER (\n        PARTITION BY order_line_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_order_lines\n  WHERE order_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06'\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_products AS\nSELECT\n      product_key,\n      product_id,\n      sku,\n      product_name,\n      category,\n      brand,\n      list_price_centavos,\n      is_active\nFROM (\n  SELECT\n      product_key,\n      product_id,\n      sku,\n      product_name,\n      category,\n      brand,\n      list_price_centavos,\n      is_active,\n      ROW_NUMBER() OVER (\n        PARTITION BY product_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_products\n  WHERE extract_date = (SELECT MAX(extract_date) FROM raw_products)\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_customers AS\nSELECT\n      customer_key,\n      customer_id,\n      given_name,\n      family_name,\n      city,\n      state_code,\n      state_name,\n      loyalty_tier,\n      email\nFROM (\n  SELECT\n      customer_key,\n      customer_id,\n      given_name,\n      family_name,\n      city,\n      state_code,\n      state_name,\n      loyalty_tier,\n      email,\n      ROW_NUMBER() OVER (\n        PARTITION BY customer_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_customers\n  WHERE extract_date = (SELECT MAX(extract_date) FROM raw_customers)\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_stores AS\nSELECT\n      store_key,\n      store_id,\n      store_name,\n      channel,\n      city,\n      state_code,\n      state_name,\n      postal_code,\n      opened_on,\n      is_active\nFROM (\n  SELECT\n      store_key,\n      store_id,\n      store_name,\n      channel,\n      city,\n      state_code,\n      state_name,\n      postal_code,\n      opened_on,\n      is_active,\n      ROW_NUMBER() OVER (\n        PARTITION BY store_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_stores\n  WHERE extract_date = (SELECT MAX(extract_date) FROM raw_stores)\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_daily_inventory AS\nSELECT\n      store_id,\n      product_id,\n      snapshot_date,\n      on_hand_units,\n      reserved_units\nFROM (\n  SELECT\n      store_id,\n      product_id,\n      snapshot_date,\n      on_hand_units,\n      reserved_units,\n      ROW_NUMBER() OVER (\n        PARTITION BY store_id, product_id, snapshot_date\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_daily_inventory\n  WHERE snapshot_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06'\n) ranked\nWHERE rn = 1"
+        ],
+        "publish_marts": [
+          "MERGE INTO dim_product AS t\nUSING stg_products AS src\nON t.product_id = src.product_id\nWHEN MATCHED THEN UPDATE SET\n  product_key = src.product_key,\n  sku = src.sku,\n  product_name = src.product_name,\n  category = src.category,\n  brand = src.brand,\n  list_price_centavos = src.list_price_centavos,\n  is_active = src.is_active\nWHEN NOT MATCHED THEN INSERT (product_key, product_id, sku, product_name, category, brand, list_price_centavos, is_active)\nVALUES (src.product_key, src.product_id, src.sku, src.product_name, src.category, src.brand, src.list_price_centavos, src.is_active)\nWHEN NOT MATCHED BY SOURCE AND TRUE THEN DELETE",
+          "MERGE INTO dim_customer AS t\nUSING stg_customers AS src\nON t.customer_id = src.customer_id\nWHEN MATCHED THEN UPDATE SET\n  customer_key = src.customer_key,\n  given_name = src.given_name,\n  family_name = src.family_name,\n  city = src.city,\n  state_code = src.state_code,\n  state_name = src.state_name,\n  loyalty_tier = src.loyalty_tier,\n  email = src.email\nWHEN NOT MATCHED THEN INSERT (customer_key, customer_id, given_name, family_name, city, state_code, state_name, loyalty_tier, email)\nVALUES (src.customer_key, src.customer_id, src.given_name, src.family_name, src.city, src.state_code, src.state_name, src.loyalty_tier, src.email)\nWHEN NOT MATCHED BY SOURCE AND TRUE THEN DELETE",
+          "MERGE INTO dim_store AS t\nUSING stg_stores AS src\nON t.store_id = src.store_id\nWHEN MATCHED THEN UPDATE SET\n  store_key = src.store_key,\n  store_name = src.store_name,\n  channel = src.channel,\n  city = src.city,\n  state_code = src.state_code,\n  state_name = src.state_name,\n  postal_code = src.postal_code,\n  opened_on = src.opened_on,\n  is_active = src.is_active\nWHEN NOT MATCHED THEN INSERT (store_key, store_id, store_name, channel, city, state_code, state_name, postal_code, opened_on, is_active)\nVALUES (src.store_key, src.store_id, src.store_name, src.channel, src.city, src.state_code, src.state_name, src.postal_code, src.opened_on, src.is_active)\nWHEN NOT MATCHED BY SOURCE AND TRUE THEN DELETE",
+          "CREATE OR REPLACE TABLE int_order_line_enriched AS\nSELECT\n      s.order_line_id,\n      s.order_id,\n      d.date_key,\n      p.product_key,\n      c.customer_key,\n      st.store_key,\n      s.quantity,\n      s.unit_price_centavos,\n      s.line_amount_centavos,\n      s.amount_mxn,\n      s.line_type,\n      s.channel,\n      s.status,\n      s.category,\n      s.order_ts,\n      s.order_date,\n      s.product_id,\n      s.customer_id,\n      s.store_id\nFROM stg_order_lines AS s\nJOIN dim_product AS p\n  ON s.product_id = p.product_id\nJOIN dim_customer AS c\n  ON s.customer_id = c.customer_id\nJOIN dim_store AS st\n  ON s.store_id = st.store_id\nJOIN dim_date AS d\n  ON s.order_date = d.full_date",
+          "MERGE INTO fact_order_lines AS t\nUSING int_order_line_enriched AS src\nON t.order_line_id = src.order_line_id AND t.order_date = src.order_date\n  AND t.order_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06'\nWHEN MATCHED THEN UPDATE SET\n  order_id = src.order_id,\n  date_key = src.date_key,\n  product_key = src.product_key,\n  customer_key = src.customer_key,\n  store_key = src.store_key,\n  quantity = src.quantity,\n  unit_price_centavos = src.unit_price_centavos,\n  line_amount_centavos = src.line_amount_centavos,\n  amount_mxn = src.amount_mxn,\n  line_type = src.line_type,\n  channel = src.channel,\n  status = src.status,\n  category = src.category,\n  order_ts = src.order_ts,\n  product_id = src.product_id,\n  customer_id = src.customer_id,\n  store_id = src.store_id\nWHEN NOT MATCHED THEN INSERT (order_line_id, order_id, date_key, product_key, customer_key, store_key, quantity, unit_price_centavos, line_amount_centavos, amount_mxn, line_type, channel, status, category, order_ts, order_date, product_id, customer_id, store_id)\nVALUES (src.order_line_id, src.order_id, src.date_key, src.product_key, src.customer_key, src.store_key, src.quantity, src.unit_price_centavos, src.line_amount_centavos, src.amount_mxn, src.line_type, src.channel, src.status, src.category, src.order_ts, src.order_date, src.product_id, src.customer_id, src.store_id)\nWHEN NOT MATCHED BY SOURCE AND t.order_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06' THEN DELETE"
+        ],
+        "data_quality": [
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM fact_order_lines\n  \n  GROUP BY order_line_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COUNT(*) AS violations FROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06') AND (order_line_id IS NULL OR order_id IS NULL OR date_key IS NULL\n  OR product_key IS NULL OR customer_key IS NULL OR store_key IS NULL\n  OR quantity IS NULL OR unit_price_centavos IS NULL OR line_amount_centavos IS NULL\n  OR amount_mxn IS NULL OR order_date IS NULL OR product_id IS NULL\n  OR customer_id IS NULL OR store_id IS NULL OR line_type IS NULL\n  OR status IS NULL OR channel IS NULL OR category IS NULL)",
+          "SELECT COUNT(*) AS violations FROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06') AND ((line_type = 'sale' AND (quantity <= 0 OR line_amount_centavos <= 0))\n  OR (line_type = 'return' AND (quantity >= 0 OR line_amount_centavos >= 0))\n  OR line_type NOT IN ('sale', 'return')\n  OR status NOT IN ('completed', 'cancelled')\n  OR channel NOT IN ('online', 'physical'))",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06') AND (quantity * unit_price_centavos <> line_amount_centavos)",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06') AND (line_amount_centavos <> CAST(ROUND(amount_mxn * 100, 0) AS BIGINT))",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_product AS p\n  ON f.product_key = p.product_key\n AND f.product_id = p.product_id\nWHERE (p.product_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_customer AS c\n  ON f.customer_key = c.customer_key\n AND f.customer_id = c.customer_id\nWHERE (c.customer_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_store AS st\n  ON f.store_key = st.store_key\n AND f.store_id = st.store_id\nWHERE (st.store_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_date AS d\n  ON f.date_key = d.date_key\n AND f.order_date = d.full_date\nWHERE (d.date_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nJOIN dim_product AS p\n  ON f.product_key = p.product_key\nWHERE (f.category <> p.category) AND (f.order_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nJOIN dim_store AS st\n  ON f.store_key = st.store_key\nWHERE (f.channel <> st.channel) AND (f.order_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06')",
+          "SELECT ABS(\n  (SELECT COUNT(*) FROM stg_order_lines) -\n  (SELECT COUNT(*) FROM fact_order_lines WHERE order_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06')\n) AS violations",
+          "SELECT CASE\n  WHEN COALESCE((SELECT MAX(order_date) FROM fact_order_lines), DATE '1900-01-01')\n       >= DATE '2026-03-06' THEN 0\n  ELSE 1\nEND AS violations",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM dim_product\n  \n  GROUP BY product_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM dim_customer\n  \n  GROUP BY customer_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM dim_store\n  \n  GROUP BY store_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COUNT(*) AS violations\nFROM stg_daily_inventory\nWHERE store_id IS NULL\n   OR product_id IS NULL\n   OR snapshot_date IS NULL\n   OR on_hand_units IS NULL\n   OR reserved_units IS NULL\n   OR on_hand_units < 0\n   OR reserved_units < 0\n   OR reserved_units > on_hand_units",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM stg_daily_inventory\n  \n  GROUP BY store_id, product_id, snapshot_date\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COUNT(*) AS violations\nFROM stg_daily_inventory AS i\nLEFT JOIN dim_store AS st\n  ON i.store_id = st.store_id\nWHERE st.store_id IS NULL",
+          "SELECT COUNT(*) AS violations\nFROM stg_daily_inventory AS i\nLEFT JOIN dim_product AS p\n  ON i.product_id = p.product_id\nWHERE p.product_id IS NULL",
+          "SELECT COUNT(*) AS violations\nFROM raw_order_lines\nWHERE extract_date <> order_date",
+          "SELECT COUNT(*) AS violations\nFROM raw_daily_inventory\nWHERE extract_date <> snapshot_date"
+        ]
+      },
+      "quality_names": [
+        "fact_order_line_id_unique",
+        "fact_required_not_null",
+        "fact_line_sign",
+        "fact_line_amount_matches_quantity",
+        "fact_amount_mxn_matches_centavos",
+        "fact_product_fk",
+        "fact_customer_fk",
+        "fact_store_fk",
+        "fact_date_fk",
+        "fact_category_matches_product",
+        "fact_channel_matches_store",
+        "staging_matches_fact_rows",
+        "fact_freshness",
+        "dim_product_id_unique",
+        "dim_customer_id_unique",
+        "dim_store_id_unique",
+        "inventory_not_null_or_negative",
+        "inventory_unique",
+        "inventory_store_fk",
+        "inventory_product_fk",
+        "raw_extract_date_matches_order_date",
+        "raw_inventory_extract_date_matches_snapshot"
+      ],
+      "expected": {
+        "fact_rows": 224,
+        "cents": 69085521,
+        "staging_rows": 48,
+        "by_day": [
+          {
+            "order_date": "2026-03-02",
+            "rows": 42,
+            "cents": 12836567
+          },
+          {
+            "order_date": "2026-03-03",
+            "rows": 44,
+            "cents": 13447513
+          },
+          {
+            "order_date": "2026-03-04",
+            "rows": 44,
+            "cents": 13093810
+          },
+          {
+            "order_date": "2026-03-05",
+            "rows": 46,
+            "cents": 15302215
+          },
+          {
+            "order_date": "2026-03-06",
+            "rows": 48,
+            "cents": 14405416
+          }
+        ]
+      },
+      "pipeline": {
+        "order_line_files_read": 1,
+        "fact_rows_in_window": 48,
+        "staging_order_lines": 48,
+        "quality_passed": true
+      }
+    },
+    "replay-2026-03-06": {
+      "logical_date": "2026-03-06",
+      "lookback_days": 0,
+      "window": [
+        "2026-03-06"
+      ],
+      "correction": false,
+      "files": {
+        "order_lines": [
+          "landing/order_lines/dt=2026-03-06/part-000.parquet"
+        ],
+        "products": [
+          "landing/products/dt=2026-03-06/part-000.parquet"
+        ],
+        "customers": [
+          "landing/customers/dt=2026-03-06/part-000.parquet"
+        ],
+        "stores": [
+          "landing/stores/dt=2026-03-06/part-000.parquet"
+        ],
+        "daily_inventory": [
+          "landing/daily_inventory/dt=2026-03-06/part-000.parquet"
+        ]
+      },
+      "tasks": {
+        "resolve_window": [
+          "SELECT DATE '2026-03-06' AS logical_date, DATE '2026-03-06' AS window_start, DATE '2026-03-06' AS window_end, 0 AS lookback_days"
+        ],
+        "generate_and_land": [
+          "(SELECT 'order_lines' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/order_lines/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'products' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/products/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'customers' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/customers/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'stores' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/stores/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'daily_inventory' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/daily_inventory/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)) ORDER BY entity"
+        ],
+        "load_raw_and_stage": [
+          "DELETE FROM raw_order_lines WHERE extract_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06'",
+          "INSERT INTO raw_order_lines (order_line_id, order_id, customer_id, store_id, product_id, quantity, unit_price_centavos, line_amount_centavos, line_type, channel, status, category, order_ts, order_date, extract_ts, extract_date, source_file) SELECT order_line_id, order_id, customer_id, store_id, product_id, quantity, unit_price_centavos, line_amount_centavos, line_type, channel, status, category, order_ts, order_date, extract_ts, extract_date, source_file FROM read_parquet(['landing/order_lines/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_products WHERE extract_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06'",
+          "INSERT INTO raw_products (product_key, product_id, sku, product_name, category, brand, list_price_centavos, is_active, extract_ts, extract_date, source_file) SELECT product_key, product_id, sku, product_name, category, brand, list_price_centavos, is_active, extract_ts, extract_date, source_file FROM read_parquet(['landing/products/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_customers WHERE extract_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06'",
+          "INSERT INTO raw_customers (customer_key, customer_id, given_name, family_name, city, state_code, state_name, loyalty_tier, email, extract_ts, extract_date, source_file) SELECT customer_key, customer_id, given_name, family_name, city, state_code, state_name, loyalty_tier, email, extract_ts, extract_date, source_file FROM read_parquet(['landing/customers/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_stores WHERE extract_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06'",
+          "INSERT INTO raw_stores (store_key, store_id, store_name, channel, city, state_code, state_name, postal_code, opened_on, is_active, extract_ts, extract_date, source_file) SELECT store_key, store_id, store_name, channel, city, state_code, state_name, postal_code, opened_on, is_active, extract_ts, extract_date, source_file FROM read_parquet(['landing/stores/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_daily_inventory WHERE extract_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06'",
+          "INSERT INTO raw_daily_inventory (store_id, product_id, snapshot_date, on_hand_units, reserved_units, extract_ts, extract_date, source_file) SELECT store_id, product_id, snapshot_date, on_hand_units, reserved_units, extract_ts, extract_date, source_file FROM read_parquet(['landing/daily_inventory/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)",
+          "CREATE OR REPLACE TABLE stg_order_lines AS\nSELECT\n      order_line_id,\n      order_id,\n      customer_id,\n      store_id,\n      product_id,\n      quantity,\n      unit_price_centavos,\n      line_amount_centavos,\n      CAST(line_amount_centavos AS DECIMAL(18, 2)) / 100 AS amount_mxn,\n      line_type,\n      channel,\n      status,\n      category,\n      order_ts,\n      order_date\nFROM (\n  SELECT\n      order_line_id,\n      order_id,\n      customer_id,\n      store_id,\n      product_id,\n      quantity,\n      unit_price_centavos,\n      line_amount_centavos,\n      line_type,\n      channel,\n      status,\n      category,\n      order_ts,\n      order_date,\n      ROW_NUMBER() OVER (\n        PARTITION BY order_line_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_order_lines\n  WHERE order_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06'\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_products AS\nSELECT\n      product_key,\n      product_id,\n      sku,\n      product_name,\n      category,\n      brand,\n      list_price_centavos,\n      is_active\nFROM (\n  SELECT\n      product_key,\n      product_id,\n      sku,\n      product_name,\n      category,\n      brand,\n      list_price_centavos,\n      is_active,\n      ROW_NUMBER() OVER (\n        PARTITION BY product_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_products\n  WHERE extract_date = (SELECT MAX(extract_date) FROM raw_products)\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_customers AS\nSELECT\n      customer_key,\n      customer_id,\n      given_name,\n      family_name,\n      city,\n      state_code,\n      state_name,\n      loyalty_tier,\n      email\nFROM (\n  SELECT\n      customer_key,\n      customer_id,\n      given_name,\n      family_name,\n      city,\n      state_code,\n      state_name,\n      loyalty_tier,\n      email,\n      ROW_NUMBER() OVER (\n        PARTITION BY customer_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_customers\n  WHERE extract_date = (SELECT MAX(extract_date) FROM raw_customers)\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_stores AS\nSELECT\n      store_key,\n      store_id,\n      store_name,\n      channel,\n      city,\n      state_code,\n      state_name,\n      postal_code,\n      opened_on,\n      is_active\nFROM (\n  SELECT\n      store_key,\n      store_id,\n      store_name,\n      channel,\n      city,\n      state_code,\n      state_name,\n      postal_code,\n      opened_on,\n      is_active,\n      ROW_NUMBER() OVER (\n        PARTITION BY store_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_stores\n  WHERE extract_date = (SELECT MAX(extract_date) FROM raw_stores)\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_daily_inventory AS\nSELECT\n      store_id,\n      product_id,\n      snapshot_date,\n      on_hand_units,\n      reserved_units\nFROM (\n  SELECT\n      store_id,\n      product_id,\n      snapshot_date,\n      on_hand_units,\n      reserved_units,\n      ROW_NUMBER() OVER (\n        PARTITION BY store_id, product_id, snapshot_date\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_daily_inventory\n  WHERE snapshot_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06'\n) ranked\nWHERE rn = 1"
+        ],
+        "publish_marts": [
+          "MERGE INTO dim_product AS t\nUSING stg_products AS src\nON t.product_id = src.product_id\nWHEN MATCHED THEN UPDATE SET\n  product_key = src.product_key,\n  sku = src.sku,\n  product_name = src.product_name,\n  category = src.category,\n  brand = src.brand,\n  list_price_centavos = src.list_price_centavos,\n  is_active = src.is_active\nWHEN NOT MATCHED THEN INSERT (product_key, product_id, sku, product_name, category, brand, list_price_centavos, is_active)\nVALUES (src.product_key, src.product_id, src.sku, src.product_name, src.category, src.brand, src.list_price_centavos, src.is_active)\nWHEN NOT MATCHED BY SOURCE AND TRUE THEN DELETE",
+          "MERGE INTO dim_customer AS t\nUSING stg_customers AS src\nON t.customer_id = src.customer_id\nWHEN MATCHED THEN UPDATE SET\n  customer_key = src.customer_key,\n  given_name = src.given_name,\n  family_name = src.family_name,\n  city = src.city,\n  state_code = src.state_code,\n  state_name = src.state_name,\n  loyalty_tier = src.loyalty_tier,\n  email = src.email\nWHEN NOT MATCHED THEN INSERT (customer_key, customer_id, given_name, family_name, city, state_code, state_name, loyalty_tier, email)\nVALUES (src.customer_key, src.customer_id, src.given_name, src.family_name, src.city, src.state_code, src.state_name, src.loyalty_tier, src.email)\nWHEN NOT MATCHED BY SOURCE AND TRUE THEN DELETE",
+          "MERGE INTO dim_store AS t\nUSING stg_stores AS src\nON t.store_id = src.store_id\nWHEN MATCHED THEN UPDATE SET\n  store_key = src.store_key,\n  store_name = src.store_name,\n  channel = src.channel,\n  city = src.city,\n  state_code = src.state_code,\n  state_name = src.state_name,\n  postal_code = src.postal_code,\n  opened_on = src.opened_on,\n  is_active = src.is_active\nWHEN NOT MATCHED THEN INSERT (store_key, store_id, store_name, channel, city, state_code, state_name, postal_code, opened_on, is_active)\nVALUES (src.store_key, src.store_id, src.store_name, src.channel, src.city, src.state_code, src.state_name, src.postal_code, src.opened_on, src.is_active)\nWHEN NOT MATCHED BY SOURCE AND TRUE THEN DELETE",
+          "CREATE OR REPLACE TABLE int_order_line_enriched AS\nSELECT\n      s.order_line_id,\n      s.order_id,\n      d.date_key,\n      p.product_key,\n      c.customer_key,\n      st.store_key,\n      s.quantity,\n      s.unit_price_centavos,\n      s.line_amount_centavos,\n      s.amount_mxn,\n      s.line_type,\n      s.channel,\n      s.status,\n      s.category,\n      s.order_ts,\n      s.order_date,\n      s.product_id,\n      s.customer_id,\n      s.store_id\nFROM stg_order_lines AS s\nJOIN dim_product AS p\n  ON s.product_id = p.product_id\nJOIN dim_customer AS c\n  ON s.customer_id = c.customer_id\nJOIN dim_store AS st\n  ON s.store_id = st.store_id\nJOIN dim_date AS d\n  ON s.order_date = d.full_date",
+          "MERGE INTO fact_order_lines AS t\nUSING int_order_line_enriched AS src\nON t.order_line_id = src.order_line_id AND t.order_date = src.order_date\n  AND t.order_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06'\nWHEN MATCHED THEN UPDATE SET\n  order_id = src.order_id,\n  date_key = src.date_key,\n  product_key = src.product_key,\n  customer_key = src.customer_key,\n  store_key = src.store_key,\n  quantity = src.quantity,\n  unit_price_centavos = src.unit_price_centavos,\n  line_amount_centavos = src.line_amount_centavos,\n  amount_mxn = src.amount_mxn,\n  line_type = src.line_type,\n  channel = src.channel,\n  status = src.status,\n  category = src.category,\n  order_ts = src.order_ts,\n  product_id = src.product_id,\n  customer_id = src.customer_id,\n  store_id = src.store_id\nWHEN NOT MATCHED THEN INSERT (order_line_id, order_id, date_key, product_key, customer_key, store_key, quantity, unit_price_centavos, line_amount_centavos, amount_mxn, line_type, channel, status, category, order_ts, order_date, product_id, customer_id, store_id)\nVALUES (src.order_line_id, src.order_id, src.date_key, src.product_key, src.customer_key, src.store_key, src.quantity, src.unit_price_centavos, src.line_amount_centavos, src.amount_mxn, src.line_type, src.channel, src.status, src.category, src.order_ts, src.order_date, src.product_id, src.customer_id, src.store_id)\nWHEN NOT MATCHED BY SOURCE AND t.order_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06' THEN DELETE"
+        ],
+        "data_quality": [
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM fact_order_lines\n  \n  GROUP BY order_line_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COUNT(*) AS violations FROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06') AND (order_line_id IS NULL OR order_id IS NULL OR date_key IS NULL\n  OR product_key IS NULL OR customer_key IS NULL OR store_key IS NULL\n  OR quantity IS NULL OR unit_price_centavos IS NULL OR line_amount_centavos IS NULL\n  OR amount_mxn IS NULL OR order_date IS NULL OR product_id IS NULL\n  OR customer_id IS NULL OR store_id IS NULL OR line_type IS NULL\n  OR status IS NULL OR channel IS NULL OR category IS NULL)",
+          "SELECT COUNT(*) AS violations FROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06') AND ((line_type = 'sale' AND (quantity <= 0 OR line_amount_centavos <= 0))\n  OR (line_type = 'return' AND (quantity >= 0 OR line_amount_centavos >= 0))\n  OR line_type NOT IN ('sale', 'return')\n  OR status NOT IN ('completed', 'cancelled')\n  OR channel NOT IN ('online', 'physical'))",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06') AND (quantity * unit_price_centavos <> line_amount_centavos)",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06') AND (line_amount_centavos <> CAST(ROUND(amount_mxn * 100, 0) AS BIGINT))",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_product AS p\n  ON f.product_key = p.product_key\n AND f.product_id = p.product_id\nWHERE (p.product_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_customer AS c\n  ON f.customer_key = c.customer_key\n AND f.customer_id = c.customer_id\nWHERE (c.customer_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_store AS st\n  ON f.store_key = st.store_key\n AND f.store_id = st.store_id\nWHERE (st.store_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_date AS d\n  ON f.date_key = d.date_key\n AND f.order_date = d.full_date\nWHERE (d.date_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nJOIN dim_product AS p\n  ON f.product_key = p.product_key\nWHERE (f.category <> p.category) AND (f.order_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nJOIN dim_store AS st\n  ON f.store_key = st.store_key\nWHERE (f.channel <> st.channel) AND (f.order_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06')",
+          "SELECT ABS(\n  (SELECT COUNT(*) FROM stg_order_lines) -\n  (SELECT COUNT(*) FROM fact_order_lines WHERE order_date BETWEEN DATE '2026-03-06' AND DATE '2026-03-06')\n) AS violations",
+          "SELECT CASE\n  WHEN COALESCE((SELECT MAX(order_date) FROM fact_order_lines), DATE '1900-01-01')\n       >= DATE '2026-03-06' THEN 0\n  ELSE 1\nEND AS violations",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM dim_product\n  \n  GROUP BY product_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM dim_customer\n  \n  GROUP BY customer_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM dim_store\n  \n  GROUP BY store_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COUNT(*) AS violations\nFROM stg_daily_inventory\nWHERE store_id IS NULL\n   OR product_id IS NULL\n   OR snapshot_date IS NULL\n   OR on_hand_units IS NULL\n   OR reserved_units IS NULL\n   OR on_hand_units < 0\n   OR reserved_units < 0\n   OR reserved_units > on_hand_units",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM stg_daily_inventory\n  \n  GROUP BY store_id, product_id, snapshot_date\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COUNT(*) AS violations\nFROM stg_daily_inventory AS i\nLEFT JOIN dim_store AS st\n  ON i.store_id = st.store_id\nWHERE st.store_id IS NULL",
+          "SELECT COUNT(*) AS violations\nFROM stg_daily_inventory AS i\nLEFT JOIN dim_product AS p\n  ON i.product_id = p.product_id\nWHERE p.product_id IS NULL",
+          "SELECT COUNT(*) AS violations\nFROM raw_order_lines\nWHERE extract_date <> order_date",
+          "SELECT COUNT(*) AS violations\nFROM raw_daily_inventory\nWHERE extract_date <> snapshot_date"
+        ]
+      },
+      "quality_names": [
+        "fact_order_line_id_unique",
+        "fact_required_not_null",
+        "fact_line_sign",
+        "fact_line_amount_matches_quantity",
+        "fact_amount_mxn_matches_centavos",
+        "fact_product_fk",
+        "fact_customer_fk",
+        "fact_store_fk",
+        "fact_date_fk",
+        "fact_category_matches_product",
+        "fact_channel_matches_store",
+        "staging_matches_fact_rows",
+        "fact_freshness",
+        "dim_product_id_unique",
+        "dim_customer_id_unique",
+        "dim_store_id_unique",
+        "inventory_not_null_or_negative",
+        "inventory_unique",
+        "inventory_store_fk",
+        "inventory_product_fk",
+        "raw_extract_date_matches_order_date",
+        "raw_inventory_extract_date_matches_snapshot"
+      ],
+      "expected": {
+        "fact_rows": 224,
+        "cents": 69085521,
+        "staging_rows": 48,
+        "by_day": [
+          {
+            "order_date": "2026-03-02",
+            "rows": 42,
+            "cents": 12836567
+          },
+          {
+            "order_date": "2026-03-03",
+            "rows": 44,
+            "cents": 13447513
+          },
+          {
+            "order_date": "2026-03-04",
+            "rows": 44,
+            "cents": 13093810
+          },
+          {
+            "order_date": "2026-03-05",
+            "rows": 46,
+            "cents": 15302215
+          },
+          {
+            "order_date": "2026-03-06",
+            "rows": 48,
+            "cents": 14405416
+          }
+        ]
+      },
+      "pipeline": {
+        "order_line_files_read": 1,
+        "fact_rows_in_window": 48,
+        "staging_order_lines": 48,
+        "quality_passed": true
+      }
+    },
+    "lookback-2026-03-06": {
+      "logical_date": "2026-03-06",
+      "lookback_days": 1,
+      "window": [
+        "2026-03-05",
+        "2026-03-06"
+      ],
+      "correction": false,
+      "files": {
+        "order_lines": [
+          "landing/order_lines/dt=2026-03-05/part-000.parquet",
+          "landing/order_lines/dt=2026-03-06/part-000.parquet"
+        ],
+        "products": [
+          "landing/products/dt=2026-03-05/part-000.parquet",
+          "landing/products/dt=2026-03-06/part-000.parquet"
+        ],
+        "customers": [
+          "landing/customers/dt=2026-03-05/part-000.parquet",
+          "landing/customers/dt=2026-03-06/part-000.parquet"
+        ],
+        "stores": [
+          "landing/stores/dt=2026-03-05/part-000.parquet",
+          "landing/stores/dt=2026-03-06/part-000.parquet"
+        ],
+        "daily_inventory": [
+          "landing/daily_inventory/dt=2026-03-05/part-000.parquet",
+          "landing/daily_inventory/dt=2026-03-06/part-000.parquet"
+        ]
+      },
+      "tasks": {
+        "resolve_window": [
+          "SELECT DATE '2026-03-06' AS logical_date, DATE '2026-03-05' AS window_start, DATE '2026-03-06' AS window_end, 1 AS lookback_days"
+        ],
+        "generate_and_land": [
+          "(SELECT 'order_lines' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/order_lines/dt=2026-03-05/part-000.parquet', 'landing/order_lines/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'products' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/products/dt=2026-03-05/part-000.parquet', 'landing/products/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'customers' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/customers/dt=2026-03-05/part-000.parquet', 'landing/customers/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'stores' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/stores/dt=2026-03-05/part-000.parquet', 'landing/stores/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'daily_inventory' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/daily_inventory/dt=2026-03-05/part-000.parquet', 'landing/daily_inventory/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)) ORDER BY entity"
+        ],
+        "load_raw_and_stage": [
+          "DELETE FROM raw_order_lines WHERE extract_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-06'",
+          "INSERT INTO raw_order_lines (order_line_id, order_id, customer_id, store_id, product_id, quantity, unit_price_centavos, line_amount_centavos, line_type, channel, status, category, order_ts, order_date, extract_ts, extract_date, source_file) SELECT order_line_id, order_id, customer_id, store_id, product_id, quantity, unit_price_centavos, line_amount_centavos, line_type, channel, status, category, order_ts, order_date, extract_ts, extract_date, source_file FROM read_parquet(['landing/order_lines/dt=2026-03-05/part-000.parquet', 'landing/order_lines/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_products WHERE extract_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-06'",
+          "INSERT INTO raw_products (product_key, product_id, sku, product_name, category, brand, list_price_centavos, is_active, extract_ts, extract_date, source_file) SELECT product_key, product_id, sku, product_name, category, brand, list_price_centavos, is_active, extract_ts, extract_date, source_file FROM read_parquet(['landing/products/dt=2026-03-05/part-000.parquet', 'landing/products/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_customers WHERE extract_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-06'",
+          "INSERT INTO raw_customers (customer_key, customer_id, given_name, family_name, city, state_code, state_name, loyalty_tier, email, extract_ts, extract_date, source_file) SELECT customer_key, customer_id, given_name, family_name, city, state_code, state_name, loyalty_tier, email, extract_ts, extract_date, source_file FROM read_parquet(['landing/customers/dt=2026-03-05/part-000.parquet', 'landing/customers/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_stores WHERE extract_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-06'",
+          "INSERT INTO raw_stores (store_key, store_id, store_name, channel, city, state_code, state_name, postal_code, opened_on, is_active, extract_ts, extract_date, source_file) SELECT store_key, store_id, store_name, channel, city, state_code, state_name, postal_code, opened_on, is_active, extract_ts, extract_date, source_file FROM read_parquet(['landing/stores/dt=2026-03-05/part-000.parquet', 'landing/stores/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_daily_inventory WHERE extract_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-06'",
+          "INSERT INTO raw_daily_inventory (store_id, product_id, snapshot_date, on_hand_units, reserved_units, extract_ts, extract_date, source_file) SELECT store_id, product_id, snapshot_date, on_hand_units, reserved_units, extract_ts, extract_date, source_file FROM read_parquet(['landing/daily_inventory/dt=2026-03-05/part-000.parquet', 'landing/daily_inventory/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)",
+          "CREATE OR REPLACE TABLE stg_order_lines AS\nSELECT\n      order_line_id,\n      order_id,\n      customer_id,\n      store_id,\n      product_id,\n      quantity,\n      unit_price_centavos,\n      line_amount_centavos,\n      CAST(line_amount_centavos AS DECIMAL(18, 2)) / 100 AS amount_mxn,\n      line_type,\n      channel,\n      status,\n      category,\n      order_ts,\n      order_date\nFROM (\n  SELECT\n      order_line_id,\n      order_id,\n      customer_id,\n      store_id,\n      product_id,\n      quantity,\n      unit_price_centavos,\n      line_amount_centavos,\n      line_type,\n      channel,\n      status,\n      category,\n      order_ts,\n      order_date,\n      ROW_NUMBER() OVER (\n        PARTITION BY order_line_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_order_lines\n  WHERE order_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-06'\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_products AS\nSELECT\n      product_key,\n      product_id,\n      sku,\n      product_name,\n      category,\n      brand,\n      list_price_centavos,\n      is_active\nFROM (\n  SELECT\n      product_key,\n      product_id,\n      sku,\n      product_name,\n      category,\n      brand,\n      list_price_centavos,\n      is_active,\n      ROW_NUMBER() OVER (\n        PARTITION BY product_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_products\n  WHERE extract_date = (SELECT MAX(extract_date) FROM raw_products)\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_customers AS\nSELECT\n      customer_key,\n      customer_id,\n      given_name,\n      family_name,\n      city,\n      state_code,\n      state_name,\n      loyalty_tier,\n      email\nFROM (\n  SELECT\n      customer_key,\n      customer_id,\n      given_name,\n      family_name,\n      city,\n      state_code,\n      state_name,\n      loyalty_tier,\n      email,\n      ROW_NUMBER() OVER (\n        PARTITION BY customer_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_customers\n  WHERE extract_date = (SELECT MAX(extract_date) FROM raw_customers)\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_stores AS\nSELECT\n      store_key,\n      store_id,\n      store_name,\n      channel,\n      city,\n      state_code,\n      state_name,\n      postal_code,\n      opened_on,\n      is_active\nFROM (\n  SELECT\n      store_key,\n      store_id,\n      store_name,\n      channel,\n      city,\n      state_code,\n      state_name,\n      postal_code,\n      opened_on,\n      is_active,\n      ROW_NUMBER() OVER (\n        PARTITION BY store_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_stores\n  WHERE extract_date = (SELECT MAX(extract_date) FROM raw_stores)\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_daily_inventory AS\nSELECT\n      store_id,\n      product_id,\n      snapshot_date,\n      on_hand_units,\n      reserved_units\nFROM (\n  SELECT\n      store_id,\n      product_id,\n      snapshot_date,\n      on_hand_units,\n      reserved_units,\n      ROW_NUMBER() OVER (\n        PARTITION BY store_id, product_id, snapshot_date\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_daily_inventory\n  WHERE snapshot_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-06'\n) ranked\nWHERE rn = 1"
+        ],
+        "publish_marts": [
+          "MERGE INTO dim_product AS t\nUSING stg_products AS src\nON t.product_id = src.product_id\nWHEN MATCHED THEN UPDATE SET\n  product_key = src.product_key,\n  sku = src.sku,\n  product_name = src.product_name,\n  category = src.category,\n  brand = src.brand,\n  list_price_centavos = src.list_price_centavos,\n  is_active = src.is_active\nWHEN NOT MATCHED THEN INSERT (product_key, product_id, sku, product_name, category, brand, list_price_centavos, is_active)\nVALUES (src.product_key, src.product_id, src.sku, src.product_name, src.category, src.brand, src.list_price_centavos, src.is_active)\nWHEN NOT MATCHED BY SOURCE AND TRUE THEN DELETE",
+          "MERGE INTO dim_customer AS t\nUSING stg_customers AS src\nON t.customer_id = src.customer_id\nWHEN MATCHED THEN UPDATE SET\n  customer_key = src.customer_key,\n  given_name = src.given_name,\n  family_name = src.family_name,\n  city = src.city,\n  state_code = src.state_code,\n  state_name = src.state_name,\n  loyalty_tier = src.loyalty_tier,\n  email = src.email\nWHEN NOT MATCHED THEN INSERT (customer_key, customer_id, given_name, family_name, city, state_code, state_name, loyalty_tier, email)\nVALUES (src.customer_key, src.customer_id, src.given_name, src.family_name, src.city, src.state_code, src.state_name, src.loyalty_tier, src.email)\nWHEN NOT MATCHED BY SOURCE AND TRUE THEN DELETE",
+          "MERGE INTO dim_store AS t\nUSING stg_stores AS src\nON t.store_id = src.store_id\nWHEN MATCHED THEN UPDATE SET\n  store_key = src.store_key,\n  store_name = src.store_name,\n  channel = src.channel,\n  city = src.city,\n  state_code = src.state_code,\n  state_name = src.state_name,\n  postal_code = src.postal_code,\n  opened_on = src.opened_on,\n  is_active = src.is_active\nWHEN NOT MATCHED THEN INSERT (store_key, store_id, store_name, channel, city, state_code, state_name, postal_code, opened_on, is_active)\nVALUES (src.store_key, src.store_id, src.store_name, src.channel, src.city, src.state_code, src.state_name, src.postal_code, src.opened_on, src.is_active)\nWHEN NOT MATCHED BY SOURCE AND TRUE THEN DELETE",
+          "CREATE OR REPLACE TABLE int_order_line_enriched AS\nSELECT\n      s.order_line_id,\n      s.order_id,\n      d.date_key,\n      p.product_key,\n      c.customer_key,\n      st.store_key,\n      s.quantity,\n      s.unit_price_centavos,\n      s.line_amount_centavos,\n      s.amount_mxn,\n      s.line_type,\n      s.channel,\n      s.status,\n      s.category,\n      s.order_ts,\n      s.order_date,\n      s.product_id,\n      s.customer_id,\n      s.store_id\nFROM stg_order_lines AS s\nJOIN dim_product AS p\n  ON s.product_id = p.product_id\nJOIN dim_customer AS c\n  ON s.customer_id = c.customer_id\nJOIN dim_store AS st\n  ON s.store_id = st.store_id\nJOIN dim_date AS d\n  ON s.order_date = d.full_date",
+          "MERGE INTO fact_order_lines AS t\nUSING int_order_line_enriched AS src\nON t.order_line_id = src.order_line_id AND t.order_date = src.order_date\n  AND t.order_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-06'\nWHEN MATCHED THEN UPDATE SET\n  order_id = src.order_id,\n  date_key = src.date_key,\n  product_key = src.product_key,\n  customer_key = src.customer_key,\n  store_key = src.store_key,\n  quantity = src.quantity,\n  unit_price_centavos = src.unit_price_centavos,\n  line_amount_centavos = src.line_amount_centavos,\n  amount_mxn = src.amount_mxn,\n  line_type = src.line_type,\n  channel = src.channel,\n  status = src.status,\n  category = src.category,\n  order_ts = src.order_ts,\n  product_id = src.product_id,\n  customer_id = src.customer_id,\n  store_id = src.store_id\nWHEN NOT MATCHED THEN INSERT (order_line_id, order_id, date_key, product_key, customer_key, store_key, quantity, unit_price_centavos, line_amount_centavos, amount_mxn, line_type, channel, status, category, order_ts, order_date, product_id, customer_id, store_id)\nVALUES (src.order_line_id, src.order_id, src.date_key, src.product_key, src.customer_key, src.store_key, src.quantity, src.unit_price_centavos, src.line_amount_centavos, src.amount_mxn, src.line_type, src.channel, src.status, src.category, src.order_ts, src.order_date, src.product_id, src.customer_id, src.store_id)\nWHEN NOT MATCHED BY SOURCE AND t.order_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-06' THEN DELETE"
+        ],
+        "data_quality": [
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM fact_order_lines\n  \n  GROUP BY order_line_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COUNT(*) AS violations FROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-06') AND (order_line_id IS NULL OR order_id IS NULL OR date_key IS NULL\n  OR product_key IS NULL OR customer_key IS NULL OR store_key IS NULL\n  OR quantity IS NULL OR unit_price_centavos IS NULL OR line_amount_centavos IS NULL\n  OR amount_mxn IS NULL OR order_date IS NULL OR product_id IS NULL\n  OR customer_id IS NULL OR store_id IS NULL OR line_type IS NULL\n  OR status IS NULL OR channel IS NULL OR category IS NULL)",
+          "SELECT COUNT(*) AS violations FROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-06') AND ((line_type = 'sale' AND (quantity <= 0 OR line_amount_centavos <= 0))\n  OR (line_type = 'return' AND (quantity >= 0 OR line_amount_centavos >= 0))\n  OR line_type NOT IN ('sale', 'return')\n  OR status NOT IN ('completed', 'cancelled')\n  OR channel NOT IN ('online', 'physical'))",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-06') AND (quantity * unit_price_centavos <> line_amount_centavos)",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-06') AND (line_amount_centavos <> CAST(ROUND(amount_mxn * 100, 0) AS BIGINT))",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_product AS p\n  ON f.product_key = p.product_key\n AND f.product_id = p.product_id\nWHERE (p.product_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-06')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_customer AS c\n  ON f.customer_key = c.customer_key\n AND f.customer_id = c.customer_id\nWHERE (c.customer_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-06')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_store AS st\n  ON f.store_key = st.store_key\n AND f.store_id = st.store_id\nWHERE (st.store_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-06')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_date AS d\n  ON f.date_key = d.date_key\n AND f.order_date = d.full_date\nWHERE (d.date_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-06')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nJOIN dim_product AS p\n  ON f.product_key = p.product_key\nWHERE (f.category <> p.category) AND (f.order_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-06')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nJOIN dim_store AS st\n  ON f.store_key = st.store_key\nWHERE (f.channel <> st.channel) AND (f.order_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-06')",
+          "SELECT ABS(\n  (SELECT COUNT(*) FROM stg_order_lines) -\n  (SELECT COUNT(*) FROM fact_order_lines WHERE order_date BETWEEN DATE '2026-03-05' AND DATE '2026-03-06')\n) AS violations",
+          "SELECT CASE\n  WHEN COALESCE((SELECT MAX(order_date) FROM fact_order_lines), DATE '1900-01-01')\n       >= DATE '2026-03-06' THEN 0\n  ELSE 1\nEND AS violations",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM dim_product\n  \n  GROUP BY product_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM dim_customer\n  \n  GROUP BY customer_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM dim_store\n  \n  GROUP BY store_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COUNT(*) AS violations\nFROM stg_daily_inventory\nWHERE store_id IS NULL\n   OR product_id IS NULL\n   OR snapshot_date IS NULL\n   OR on_hand_units IS NULL\n   OR reserved_units IS NULL\n   OR on_hand_units < 0\n   OR reserved_units < 0\n   OR reserved_units > on_hand_units",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM stg_daily_inventory\n  \n  GROUP BY store_id, product_id, snapshot_date\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COUNT(*) AS violations\nFROM stg_daily_inventory AS i\nLEFT JOIN dim_store AS st\n  ON i.store_id = st.store_id\nWHERE st.store_id IS NULL",
+          "SELECT COUNT(*) AS violations\nFROM stg_daily_inventory AS i\nLEFT JOIN dim_product AS p\n  ON i.product_id = p.product_id\nWHERE p.product_id IS NULL",
+          "SELECT COUNT(*) AS violations\nFROM raw_order_lines\nWHERE extract_date <> order_date",
+          "SELECT COUNT(*) AS violations\nFROM raw_daily_inventory\nWHERE extract_date <> snapshot_date"
+        ]
+      },
+      "quality_names": [
+        "fact_order_line_id_unique",
+        "fact_required_not_null",
+        "fact_line_sign",
+        "fact_line_amount_matches_quantity",
+        "fact_amount_mxn_matches_centavos",
+        "fact_product_fk",
+        "fact_customer_fk",
+        "fact_store_fk",
+        "fact_date_fk",
+        "fact_category_matches_product",
+        "fact_channel_matches_store",
+        "staging_matches_fact_rows",
+        "fact_freshness",
+        "dim_product_id_unique",
+        "dim_customer_id_unique",
+        "dim_store_id_unique",
+        "inventory_not_null_or_negative",
+        "inventory_unique",
+        "inventory_store_fk",
+        "inventory_product_fk",
+        "raw_extract_date_matches_order_date",
+        "raw_inventory_extract_date_matches_snapshot"
+      ],
+      "expected": {
+        "fact_rows": 224,
+        "cents": 69085521,
+        "staging_rows": 94,
+        "by_day": [
+          {
+            "order_date": "2026-03-02",
+            "rows": 42,
+            "cents": 12836567
+          },
+          {
+            "order_date": "2026-03-03",
+            "rows": 44,
+            "cents": 13447513
+          },
+          {
+            "order_date": "2026-03-04",
+            "rows": 44,
+            "cents": 13093810
+          },
+          {
+            "order_date": "2026-03-05",
+            "rows": 46,
+            "cents": 15302215
+          },
+          {
+            "order_date": "2026-03-06",
+            "rows": 48,
+            "cents": 14405416
+          }
+        ]
+      },
+      "pipeline": {
+        "order_line_files_read": 2,
+        "fact_rows_in_window": 94,
+        "staging_order_lines": 94,
+        "quality_passed": true
+      }
+    },
+    "correction-2026-03-04": {
+      "logical_date": "2026-03-04",
+      "lookback_days": 0,
+      "window": [
+        "2026-03-04"
+      ],
+      "correction": true,
+      "files": {
+        "order_lines": [
+          "corrections/order_lines/dt=2026-03-04/part-000.parquet"
+        ],
+        "products": [
+          "landing/products/dt=2026-03-04/part-000.parquet"
+        ],
+        "customers": [
+          "landing/customers/dt=2026-03-04/part-000.parquet"
+        ],
+        "stores": [
+          "landing/stores/dt=2026-03-04/part-000.parquet"
+        ],
+        "daily_inventory": [
+          "landing/daily_inventory/dt=2026-03-04/part-000.parquet"
+        ]
+      },
+      "tasks": {
+        "resolve_window": [
+          "SELECT DATE '2026-03-04' AS logical_date, DATE '2026-03-04' AS window_start, DATE '2026-03-04' AS window_end, 0 AS lookback_days"
+        ],
+        "generate_and_land": [
+          "(SELECT 'order_lines' AS entity, COUNT(*) AS rows FROM read_parquet(['corrections/order_lines/dt=2026-03-04/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'products' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/products/dt=2026-03-04/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'customers' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/customers/dt=2026-03-04/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'stores' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/stores/dt=2026-03-04/part-000.parquet'], hive_partitioning=false)) UNION ALL (SELECT 'daily_inventory' AS entity, COUNT(*) AS rows FROM read_parquet(['landing/daily_inventory/dt=2026-03-04/part-000.parquet'], hive_partitioning=false)) ORDER BY entity"
+        ],
+        "load_raw_and_stage": [
+          "DELETE FROM raw_order_lines WHERE extract_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04'",
+          "INSERT INTO raw_order_lines (order_line_id, order_id, customer_id, store_id, product_id, quantity, unit_price_centavos, line_amount_centavos, line_type, channel, status, category, order_ts, order_date, extract_ts, extract_date, source_file) SELECT order_line_id, order_id, customer_id, store_id, product_id, quantity, unit_price_centavos, line_amount_centavos, line_type, channel, status, category, order_ts, order_date, extract_ts, extract_date, source_file FROM read_parquet(['corrections/order_lines/dt=2026-03-04/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_products WHERE extract_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04'",
+          "INSERT INTO raw_products (product_key, product_id, sku, product_name, category, brand, list_price_centavos, is_active, extract_ts, extract_date, source_file) SELECT product_key, product_id, sku, product_name, category, brand, list_price_centavos, is_active, extract_ts, extract_date, source_file FROM read_parquet(['landing/products/dt=2026-03-04/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_customers WHERE extract_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04'",
+          "INSERT INTO raw_customers (customer_key, customer_id, given_name, family_name, city, state_code, state_name, loyalty_tier, email, extract_ts, extract_date, source_file) SELECT customer_key, customer_id, given_name, family_name, city, state_code, state_name, loyalty_tier, email, extract_ts, extract_date, source_file FROM read_parquet(['landing/customers/dt=2026-03-04/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_stores WHERE extract_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04'",
+          "INSERT INTO raw_stores (store_key, store_id, store_name, channel, city, state_code, state_name, postal_code, opened_on, is_active, extract_ts, extract_date, source_file) SELECT store_key, store_id, store_name, channel, city, state_code, state_name, postal_code, opened_on, is_active, extract_ts, extract_date, source_file FROM read_parquet(['landing/stores/dt=2026-03-04/part-000.parquet'], hive_partitioning=false)",
+          "DELETE FROM raw_daily_inventory WHERE extract_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04'",
+          "INSERT INTO raw_daily_inventory (store_id, product_id, snapshot_date, on_hand_units, reserved_units, extract_ts, extract_date, source_file) SELECT store_id, product_id, snapshot_date, on_hand_units, reserved_units, extract_ts, extract_date, source_file FROM read_parquet(['landing/daily_inventory/dt=2026-03-04/part-000.parquet'], hive_partitioning=false)",
+          "CREATE OR REPLACE TABLE stg_order_lines AS\nSELECT\n      order_line_id,\n      order_id,\n      customer_id,\n      store_id,\n      product_id,\n      quantity,\n      unit_price_centavos,\n      line_amount_centavos,\n      CAST(line_amount_centavos AS DECIMAL(18, 2)) / 100 AS amount_mxn,\n      line_type,\n      channel,\n      status,\n      category,\n      order_ts,\n      order_date\nFROM (\n  SELECT\n      order_line_id,\n      order_id,\n      customer_id,\n      store_id,\n      product_id,\n      quantity,\n      unit_price_centavos,\n      line_amount_centavos,\n      line_type,\n      channel,\n      status,\n      category,\n      order_ts,\n      order_date,\n      ROW_NUMBER() OVER (\n        PARTITION BY order_line_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_order_lines\n  WHERE order_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04'\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_products AS\nSELECT\n      product_key,\n      product_id,\n      sku,\n      product_name,\n      category,\n      brand,\n      list_price_centavos,\n      is_active\nFROM (\n  SELECT\n      product_key,\n      product_id,\n      sku,\n      product_name,\n      category,\n      brand,\n      list_price_centavos,\n      is_active,\n      ROW_NUMBER() OVER (\n        PARTITION BY product_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_products\n  WHERE extract_date = (SELECT MAX(extract_date) FROM raw_products)\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_customers AS\nSELECT\n      customer_key,\n      customer_id,\n      given_name,\n      family_name,\n      city,\n      state_code,\n      state_name,\n      loyalty_tier,\n      email\nFROM (\n  SELECT\n      customer_key,\n      customer_id,\n      given_name,\n      family_name,\n      city,\n      state_code,\n      state_name,\n      loyalty_tier,\n      email,\n      ROW_NUMBER() OVER (\n        PARTITION BY customer_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_customers\n  WHERE extract_date = (SELECT MAX(extract_date) FROM raw_customers)\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_stores AS\nSELECT\n      store_key,\n      store_id,\n      store_name,\n      channel,\n      city,\n      state_code,\n      state_name,\n      postal_code,\n      opened_on,\n      is_active\nFROM (\n  SELECT\n      store_key,\n      store_id,\n      store_name,\n      channel,\n      city,\n      state_code,\n      state_name,\n      postal_code,\n      opened_on,\n      is_active,\n      ROW_NUMBER() OVER (\n        PARTITION BY store_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_stores\n  WHERE extract_date = (SELECT MAX(extract_date) FROM raw_stores)\n) ranked\nWHERE rn = 1",
+          "CREATE OR REPLACE TABLE stg_daily_inventory AS\nSELECT\n      store_id,\n      product_id,\n      snapshot_date,\n      on_hand_units,\n      reserved_units\nFROM (\n  SELECT\n      store_id,\n      product_id,\n      snapshot_date,\n      on_hand_units,\n      reserved_units,\n      ROW_NUMBER() OVER (\n        PARTITION BY store_id, product_id, snapshot_date\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_daily_inventory\n  WHERE snapshot_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04'\n) ranked\nWHERE rn = 1"
+        ],
+        "publish_marts": [
+          "MERGE INTO dim_product AS t\nUSING stg_products AS src\nON t.product_id = src.product_id\nWHEN MATCHED THEN UPDATE SET\n  product_key = src.product_key,\n  sku = src.sku,\n  product_name = src.product_name,\n  category = src.category,\n  brand = src.brand,\n  list_price_centavos = src.list_price_centavos,\n  is_active = src.is_active\nWHEN NOT MATCHED THEN INSERT (product_key, product_id, sku, product_name, category, brand, list_price_centavos, is_active)\nVALUES (src.product_key, src.product_id, src.sku, src.product_name, src.category, src.brand, src.list_price_centavos, src.is_active)\nWHEN NOT MATCHED BY SOURCE AND TRUE THEN DELETE",
+          "MERGE INTO dim_customer AS t\nUSING stg_customers AS src\nON t.customer_id = src.customer_id\nWHEN MATCHED THEN UPDATE SET\n  customer_key = src.customer_key,\n  given_name = src.given_name,\n  family_name = src.family_name,\n  city = src.city,\n  state_code = src.state_code,\n  state_name = src.state_name,\n  loyalty_tier = src.loyalty_tier,\n  email = src.email\nWHEN NOT MATCHED THEN INSERT (customer_key, customer_id, given_name, family_name, city, state_code, state_name, loyalty_tier, email)\nVALUES (src.customer_key, src.customer_id, src.given_name, src.family_name, src.city, src.state_code, src.state_name, src.loyalty_tier, src.email)\nWHEN NOT MATCHED BY SOURCE AND TRUE THEN DELETE",
+          "MERGE INTO dim_store AS t\nUSING stg_stores AS src\nON t.store_id = src.store_id\nWHEN MATCHED THEN UPDATE SET\n  store_key = src.store_key,\n  store_name = src.store_name,\n  channel = src.channel,\n  city = src.city,\n  state_code = src.state_code,\n  state_name = src.state_name,\n  postal_code = src.postal_code,\n  opened_on = src.opened_on,\n  is_active = src.is_active\nWHEN NOT MATCHED THEN INSERT (store_key, store_id, store_name, channel, city, state_code, state_name, postal_code, opened_on, is_active)\nVALUES (src.store_key, src.store_id, src.store_name, src.channel, src.city, src.state_code, src.state_name, src.postal_code, src.opened_on, src.is_active)\nWHEN NOT MATCHED BY SOURCE AND TRUE THEN DELETE",
+          "CREATE OR REPLACE TABLE int_order_line_enriched AS\nSELECT\n      s.order_line_id,\n      s.order_id,\n      d.date_key,\n      p.product_key,\n      c.customer_key,\n      st.store_key,\n      s.quantity,\n      s.unit_price_centavos,\n      s.line_amount_centavos,\n      s.amount_mxn,\n      s.line_type,\n      s.channel,\n      s.status,\n      s.category,\n      s.order_ts,\n      s.order_date,\n      s.product_id,\n      s.customer_id,\n      s.store_id\nFROM stg_order_lines AS s\nJOIN dim_product AS p\n  ON s.product_id = p.product_id\nJOIN dim_customer AS c\n  ON s.customer_id = c.customer_id\nJOIN dim_store AS st\n  ON s.store_id = st.store_id\nJOIN dim_date AS d\n  ON s.order_date = d.full_date",
+          "MERGE INTO fact_order_lines AS t\nUSING int_order_line_enriched AS src\nON t.order_line_id = src.order_line_id AND t.order_date = src.order_date\n  AND t.order_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04'\nWHEN MATCHED THEN UPDATE SET\n  order_id = src.order_id,\n  date_key = src.date_key,\n  product_key = src.product_key,\n  customer_key = src.customer_key,\n  store_key = src.store_key,\n  quantity = src.quantity,\n  unit_price_centavos = src.unit_price_centavos,\n  line_amount_centavos = src.line_amount_centavos,\n  amount_mxn = src.amount_mxn,\n  line_type = src.line_type,\n  channel = src.channel,\n  status = src.status,\n  category = src.category,\n  order_ts = src.order_ts,\n  product_id = src.product_id,\n  customer_id = src.customer_id,\n  store_id = src.store_id\nWHEN NOT MATCHED THEN INSERT (order_line_id, order_id, date_key, product_key, customer_key, store_key, quantity, unit_price_centavos, line_amount_centavos, amount_mxn, line_type, channel, status, category, order_ts, order_date, product_id, customer_id, store_id)\nVALUES (src.order_line_id, src.order_id, src.date_key, src.product_key, src.customer_key, src.store_key, src.quantity, src.unit_price_centavos, src.line_amount_centavos, src.amount_mxn, src.line_type, src.channel, src.status, src.category, src.order_ts, src.order_date, src.product_id, src.customer_id, src.store_id)\nWHEN NOT MATCHED BY SOURCE AND t.order_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04' THEN DELETE"
+        ],
+        "data_quality": [
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM fact_order_lines\n  \n  GROUP BY order_line_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COUNT(*) AS violations FROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04') AND (order_line_id IS NULL OR order_id IS NULL OR date_key IS NULL\n  OR product_key IS NULL OR customer_key IS NULL OR store_key IS NULL\n  OR quantity IS NULL OR unit_price_centavos IS NULL OR line_amount_centavos IS NULL\n  OR amount_mxn IS NULL OR order_date IS NULL OR product_id IS NULL\n  OR customer_id IS NULL OR store_id IS NULL OR line_type IS NULL\n  OR status IS NULL OR channel IS NULL OR category IS NULL)",
+          "SELECT COUNT(*) AS violations FROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04') AND ((line_type = 'sale' AND (quantity <= 0 OR line_amount_centavos <= 0))\n  OR (line_type = 'return' AND (quantity >= 0 OR line_amount_centavos >= 0))\n  OR line_type NOT IN ('sale', 'return')\n  OR status NOT IN ('completed', 'cancelled')\n  OR channel NOT IN ('online', 'physical'))",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04') AND (quantity * unit_price_centavos <> line_amount_centavos)",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines\nWHERE (order_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04') AND (line_amount_centavos <> CAST(ROUND(amount_mxn * 100, 0) AS BIGINT))",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_product AS p\n  ON f.product_key = p.product_key\n AND f.product_id = p.product_id\nWHERE (p.product_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_customer AS c\n  ON f.customer_key = c.customer_key\n AND f.customer_id = c.customer_id\nWHERE (c.customer_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_store AS st\n  ON f.store_key = st.store_key\n AND f.store_id = st.store_id\nWHERE (st.store_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_date AS d\n  ON f.date_key = d.date_key\n AND f.order_date = d.full_date\nWHERE (d.date_key IS NULL) AND (f.order_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nJOIN dim_product AS p\n  ON f.product_key = p.product_key\nWHERE (f.category <> p.category) AND (f.order_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04')",
+          "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nJOIN dim_store AS st\n  ON f.store_key = st.store_key\nWHERE (f.channel <> st.channel) AND (f.order_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04')",
+          "SELECT ABS(\n  (SELECT COUNT(*) FROM stg_order_lines) -\n  (SELECT COUNT(*) FROM fact_order_lines WHERE order_date BETWEEN DATE '2026-03-04' AND DATE '2026-03-04')\n) AS violations",
+          "SELECT CASE\n  WHEN COALESCE((SELECT MAX(order_date) FROM fact_order_lines), DATE '1900-01-01')\n       >= DATE '2026-03-04' THEN 0\n  ELSE 1\nEND AS violations",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM dim_product\n  \n  GROUP BY product_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM dim_customer\n  \n  GROUP BY customer_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM dim_store\n  \n  GROUP BY store_id\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COUNT(*) AS violations\nFROM stg_daily_inventory\nWHERE store_id IS NULL\n   OR product_id IS NULL\n   OR snapshot_date IS NULL\n   OR on_hand_units IS NULL\n   OR reserved_units IS NULL\n   OR on_hand_units < 0\n   OR reserved_units < 0\n   OR reserved_units > on_hand_units",
+          "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM stg_daily_inventory\n  \n  GROUP BY store_id, product_id, snapshot_date\n  HAVING COUNT(*) > 1\n) dupes",
+          "SELECT COUNT(*) AS violations\nFROM stg_daily_inventory AS i\nLEFT JOIN dim_store AS st\n  ON i.store_id = st.store_id\nWHERE st.store_id IS NULL",
+          "SELECT COUNT(*) AS violations\nFROM stg_daily_inventory AS i\nLEFT JOIN dim_product AS p\n  ON i.product_id = p.product_id\nWHERE p.product_id IS NULL",
+          "SELECT COUNT(*) AS violations\nFROM raw_order_lines\nWHERE extract_date <> order_date",
+          "SELECT COUNT(*) AS violations\nFROM raw_daily_inventory\nWHERE extract_date <> snapshot_date"
+        ]
+      },
+      "quality_names": [
+        "fact_order_line_id_unique",
+        "fact_required_not_null",
+        "fact_line_sign",
+        "fact_line_amount_matches_quantity",
+        "fact_amount_mxn_matches_centavos",
+        "fact_product_fk",
+        "fact_customer_fk",
+        "fact_store_fk",
+        "fact_date_fk",
+        "fact_category_matches_product",
+        "fact_channel_matches_store",
+        "staging_matches_fact_rows",
+        "fact_freshness",
+        "dim_product_id_unique",
+        "dim_customer_id_unique",
+        "dim_store_id_unique",
+        "inventory_not_null_or_negative",
+        "inventory_unique",
+        "inventory_store_fk",
+        "inventory_product_fk",
+        "raw_extract_date_matches_order_date",
+        "raw_inventory_extract_date_matches_snapshot"
+      ],
+      "expected": {
+        "fact_rows": 223,
+        "cents": 69087636,
+        "staging_rows": 43,
+        "by_day": [
+          {
+            "order_date": "2026-03-02",
+            "rows": 42,
+            "cents": 12836567
+          },
+          {
+            "order_date": "2026-03-03",
+            "rows": 44,
+            "cents": 13447513
+          },
+          {
+            "order_date": "2026-03-04",
+            "rows": 43,
+            "cents": 13095925
+          },
+          {
+            "order_date": "2026-03-05",
+            "rows": 46,
+            "cents": 15302215
+          },
+          {
+            "order_date": "2026-03-06",
+            "rows": 48,
+            "cents": 14405416
+          }
+        ]
+      },
+      "pipeline": {
+        "order_line_files_read": 1,
+        "fact_rows_in_window": 43,
+        "staging_order_lines": 43,
+        "quality_passed": true
+      }
+    }
+  },
+  "full_refresh": {
+    "logical_date": "2026-03-06",
+    "files": {
+      "order_lines": [
+        "landing/order_lines/dt=2026-03-02/part-000.parquet",
+        "landing/order_lines/dt=2026-03-03/part-000.parquet",
+        "landing/order_lines/dt=2026-03-04/part-000.parquet",
+        "landing/order_lines/dt=2026-03-05/part-000.parquet",
+        "landing/order_lines/dt=2026-03-06/part-000.parquet"
+      ],
+      "products": [
+        "landing/products/dt=2026-03-02/part-000.parquet",
+        "landing/products/dt=2026-03-03/part-000.parquet",
+        "landing/products/dt=2026-03-04/part-000.parquet",
+        "landing/products/dt=2026-03-05/part-000.parquet",
+        "landing/products/dt=2026-03-06/part-000.parquet"
+      ],
+      "customers": [
+        "landing/customers/dt=2026-03-02/part-000.parquet",
+        "landing/customers/dt=2026-03-03/part-000.parquet",
+        "landing/customers/dt=2026-03-04/part-000.parquet",
+        "landing/customers/dt=2026-03-05/part-000.parquet",
+        "landing/customers/dt=2026-03-06/part-000.parquet"
+      ],
+      "stores": [
+        "landing/stores/dt=2026-03-02/part-000.parquet",
+        "landing/stores/dt=2026-03-03/part-000.parquet",
+        "landing/stores/dt=2026-03-04/part-000.parquet",
+        "landing/stores/dt=2026-03-05/part-000.parquet",
+        "landing/stores/dt=2026-03-06/part-000.parquet"
+      ],
+      "daily_inventory": [
+        "landing/daily_inventory/dt=2026-03-02/part-000.parquet",
+        "landing/daily_inventory/dt=2026-03-03/part-000.parquet",
+        "landing/daily_inventory/dt=2026-03-04/part-000.parquet",
+        "landing/daily_inventory/dt=2026-03-05/part-000.parquet",
+        "landing/daily_inventory/dt=2026-03-06/part-000.parquet"
+      ]
+    },
+    "statements": [
+      "CREATE TABLE IF NOT EXISTS raw_order_lines (\n  order_line_id VARCHAR NOT NULL,\n  order_id VARCHAR NOT NULL,\n  customer_id VARCHAR NOT NULL,\n  store_id VARCHAR NOT NULL,\n  product_id VARCHAR NOT NULL,\n  quantity BIGINT NOT NULL,\n  unit_price_centavos BIGINT NOT NULL,\n  line_amount_centavos BIGINT NOT NULL,\n  line_type VARCHAR NOT NULL,\n  channel VARCHAR NOT NULL,\n  status VARCHAR NOT NULL,\n  category VARCHAR NOT NULL,\n  order_ts TIMESTAMP NOT NULL,\n  order_date DATE NOT NULL,\n  extract_ts TIMESTAMP NOT NULL,\n  extract_date DATE NOT NULL,\n  source_file VARCHAR NOT NULL\n)",
+      "CREATE TABLE IF NOT EXISTS raw_products (\n  product_key BIGINT NOT NULL,\n  product_id VARCHAR NOT NULL,\n  sku VARCHAR NOT NULL,\n  product_name VARCHAR NOT NULL,\n  category VARCHAR NOT NULL,\n  brand VARCHAR NOT NULL,\n  list_price_centavos BIGINT NOT NULL,\n  is_active BOOLEAN NOT NULL,\n  extract_ts TIMESTAMP NOT NULL,\n  extract_date DATE NOT NULL,\n  source_file VARCHAR NOT NULL\n)",
+      "CREATE TABLE IF NOT EXISTS raw_customers (\n  customer_key BIGINT NOT NULL,\n  customer_id VARCHAR NOT NULL,\n  given_name VARCHAR NOT NULL,\n  family_name VARCHAR NOT NULL,\n  city VARCHAR NOT NULL,\n  state_code VARCHAR NOT NULL,\n  state_name VARCHAR NOT NULL,\n  loyalty_tier VARCHAR NOT NULL,\n  email VARCHAR NOT NULL,\n  extract_ts TIMESTAMP NOT NULL,\n  extract_date DATE NOT NULL,\n  source_file VARCHAR NOT NULL\n)",
+      "CREATE TABLE IF NOT EXISTS raw_stores (\n  store_key BIGINT NOT NULL,\n  store_id VARCHAR NOT NULL,\n  store_name VARCHAR NOT NULL,\n  channel VARCHAR NOT NULL,\n  city VARCHAR NOT NULL,\n  state_code VARCHAR NOT NULL,\n  state_name VARCHAR NOT NULL,\n  postal_code VARCHAR NOT NULL,\n  opened_on DATE NOT NULL,\n  is_active BOOLEAN NOT NULL,\n  extract_ts TIMESTAMP NOT NULL,\n  extract_date DATE NOT NULL,\n  source_file VARCHAR NOT NULL\n)",
+      "CREATE TABLE IF NOT EXISTS raw_daily_inventory (\n  store_id VARCHAR NOT NULL,\n  product_id VARCHAR NOT NULL,\n  snapshot_date DATE NOT NULL,\n  on_hand_units BIGINT NOT NULL,\n  reserved_units BIGINT NOT NULL,\n  extract_ts TIMESTAMP NOT NULL,\n  extract_date DATE NOT NULL,\n  source_file VARCHAR NOT NULL\n)",
+      "CREATE TABLE IF NOT EXISTS dim_product (\n  product_key BIGINT NOT NULL,\n  product_id VARCHAR NOT NULL,\n  sku VARCHAR NOT NULL,\n  product_name VARCHAR NOT NULL,\n  category VARCHAR NOT NULL,\n  brand VARCHAR NOT NULL,\n  list_price_centavos BIGINT NOT NULL,\n  is_active BOOLEAN NOT NULL\n)",
+      "CREATE TABLE IF NOT EXISTS dim_customer (\n  customer_key BIGINT NOT NULL,\n  customer_id VARCHAR NOT NULL,\n  given_name VARCHAR NOT NULL,\n  family_name VARCHAR NOT NULL,\n  city VARCHAR NOT NULL,\n  state_code VARCHAR NOT NULL,\n  state_name VARCHAR NOT NULL,\n  loyalty_tier VARCHAR NOT NULL,\n  email VARCHAR NOT NULL\n)",
+      "CREATE TABLE IF NOT EXISTS dim_store (\n  store_key BIGINT NOT NULL,\n  store_id VARCHAR NOT NULL,\n  store_name VARCHAR NOT NULL,\n  channel VARCHAR NOT NULL,\n  city VARCHAR NOT NULL,\n  state_code VARCHAR NOT NULL,\n  state_name VARCHAR NOT NULL,\n  postal_code VARCHAR NOT NULL,\n  opened_on DATE NOT NULL,\n  is_active BOOLEAN NOT NULL\n)",
+      "CREATE TABLE IF NOT EXISTS dim_date (\n  date_key BIGINT NOT NULL,\n  full_date DATE NOT NULL,\n  year BIGINT NOT NULL,\n  quarter BIGINT NOT NULL,\n  month BIGINT NOT NULL,\n  day BIGINT NOT NULL,\n  day_name VARCHAR NOT NULL,\n  is_weekend BOOLEAN NOT NULL,\n  is_mx_public_holiday BOOLEAN NOT NULL,\n  holiday_name VARCHAR NOT NULL\n)",
+      "CREATE TABLE IF NOT EXISTS fact_order_lines (\n  order_line_id VARCHAR NOT NULL,\n  order_id VARCHAR NOT NULL,\n  date_key BIGINT NOT NULL,\n  product_key BIGINT NOT NULL,\n  customer_key BIGINT NOT NULL,\n  store_key BIGINT NOT NULL,\n  quantity BIGINT NOT NULL,\n  unit_price_centavos BIGINT NOT NULL,\n  line_amount_centavos BIGINT NOT NULL,\n  amount_mxn DECIMAL(18, 2) NOT NULL,\n  line_type VARCHAR NOT NULL,\n  channel VARCHAR NOT NULL,\n  status VARCHAR NOT NULL,\n  category VARCHAR NOT NULL,\n  order_ts TIMESTAMP NOT NULL,\n  order_date DATE NOT NULL,\n  product_id VARCHAR NOT NULL,\n  customer_id VARCHAR NOT NULL,\n  store_id VARCHAR NOT NULL\n)",
+      "CREATE INDEX IF NOT EXISTS idx_fact_order_lines_order_date ON fact_order_lines(order_date)",
+      "CREATE INDEX IF NOT EXISTS idx_fact_order_lines_store_id ON fact_order_lines(store_id)",
+      "CREATE INDEX IF NOT EXISTS idx_fact_order_lines_product_id ON fact_order_lines(product_id)",
+      "CREATE INDEX IF NOT EXISTS idx_raw_order_lines_extract_date ON raw_order_lines(extract_date)",
+      "DELETE FROM dim_date WHERE full_date >= DATE '1900-01-01'",
+      "INSERT INTO dim_date (date_key, full_date, year, quarter, month, day, day_name, is_weekend, is_mx_public_holiday, holiday_name) SELECT date_key, full_date, year, quarter, month, day, day_name, is_weekend, is_mx_public_holiday, holiday_name FROM read_parquet(['calendar/dim_date.parquet'], hive_partitioning=false)",
+      "DELETE FROM raw_order_lines",
+      "INSERT INTO raw_order_lines (order_line_id, order_id, customer_id, store_id, product_id, quantity, unit_price_centavos, line_amount_centavos, line_type, channel, status, category, order_ts, order_date, extract_ts, extract_date, source_file) SELECT order_line_id, order_id, customer_id, store_id, product_id, quantity, unit_price_centavos, line_amount_centavos, line_type, channel, status, category, order_ts, order_date, extract_ts, extract_date, source_file FROM read_parquet(['landing/order_lines/dt=2026-03-02/part-000.parquet', 'landing/order_lines/dt=2026-03-03/part-000.parquet', 'landing/order_lines/dt=2026-03-04/part-000.parquet', 'landing/order_lines/dt=2026-03-05/part-000.parquet', 'landing/order_lines/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)",
+      "DELETE FROM raw_products",
+      "INSERT INTO raw_products (product_key, product_id, sku, product_name, category, brand, list_price_centavos, is_active, extract_ts, extract_date, source_file) SELECT product_key, product_id, sku, product_name, category, brand, list_price_centavos, is_active, extract_ts, extract_date, source_file FROM read_parquet(['landing/products/dt=2026-03-02/part-000.parquet', 'landing/products/dt=2026-03-03/part-000.parquet', 'landing/products/dt=2026-03-04/part-000.parquet', 'landing/products/dt=2026-03-05/part-000.parquet', 'landing/products/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)",
+      "DELETE FROM raw_customers",
+      "INSERT INTO raw_customers (customer_key, customer_id, given_name, family_name, city, state_code, state_name, loyalty_tier, email, extract_ts, extract_date, source_file) SELECT customer_key, customer_id, given_name, family_name, city, state_code, state_name, loyalty_tier, email, extract_ts, extract_date, source_file FROM read_parquet(['landing/customers/dt=2026-03-02/part-000.parquet', 'landing/customers/dt=2026-03-03/part-000.parquet', 'landing/customers/dt=2026-03-04/part-000.parquet', 'landing/customers/dt=2026-03-05/part-000.parquet', 'landing/customers/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)",
+      "DELETE FROM raw_stores",
+      "INSERT INTO raw_stores (store_key, store_id, store_name, channel, city, state_code, state_name, postal_code, opened_on, is_active, extract_ts, extract_date, source_file) SELECT store_key, store_id, store_name, channel, city, state_code, state_name, postal_code, opened_on, is_active, extract_ts, extract_date, source_file FROM read_parquet(['landing/stores/dt=2026-03-02/part-000.parquet', 'landing/stores/dt=2026-03-03/part-000.parquet', 'landing/stores/dt=2026-03-04/part-000.parquet', 'landing/stores/dt=2026-03-05/part-000.parquet', 'landing/stores/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)",
+      "DELETE FROM raw_daily_inventory",
+      "INSERT INTO raw_daily_inventory (store_id, product_id, snapshot_date, on_hand_units, reserved_units, extract_ts, extract_date, source_file) SELECT store_id, product_id, snapshot_date, on_hand_units, reserved_units, extract_ts, extract_date, source_file FROM read_parquet(['landing/daily_inventory/dt=2026-03-02/part-000.parquet', 'landing/daily_inventory/dt=2026-03-03/part-000.parquet', 'landing/daily_inventory/dt=2026-03-04/part-000.parquet', 'landing/daily_inventory/dt=2026-03-05/part-000.parquet', 'landing/daily_inventory/dt=2026-03-06/part-000.parquet'], hive_partitioning=false)",
+      "CREATE OR REPLACE TABLE stg_order_lines AS\nSELECT\n      order_line_id,\n      order_id,\n      customer_id,\n      store_id,\n      product_id,\n      quantity,\n      unit_price_centavos,\n      line_amount_centavos,\n      CAST(line_amount_centavos AS DECIMAL(18, 2)) / 100 AS amount_mxn,\n      line_type,\n      channel,\n      status,\n      category,\n      order_ts,\n      order_date\nFROM (\n  SELECT\n      order_line_id,\n      order_id,\n      customer_id,\n      store_id,\n      product_id,\n      quantity,\n      unit_price_centavos,\n      line_amount_centavos,\n      line_type,\n      channel,\n      status,\n      category,\n      order_ts,\n      order_date,\n      ROW_NUMBER() OVER (\n        PARTITION BY order_line_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_order_lines\n  \n) ranked\nWHERE rn = 1",
+      "CREATE OR REPLACE TABLE stg_products AS\nSELECT\n      product_key,\n      product_id,\n      sku,\n      product_name,\n      category,\n      brand,\n      list_price_centavos,\n      is_active\nFROM (\n  SELECT\n      product_key,\n      product_id,\n      sku,\n      product_name,\n      category,\n      brand,\n      list_price_centavos,\n      is_active,\n      ROW_NUMBER() OVER (\n        PARTITION BY product_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_products\n  WHERE extract_date = (SELECT MAX(extract_date) FROM raw_products)\n) ranked\nWHERE rn = 1",
+      "CREATE OR REPLACE TABLE stg_customers AS\nSELECT\n      customer_key,\n      customer_id,\n      given_name,\n      family_name,\n      city,\n      state_code,\n      state_name,\n      loyalty_tier,\n      email\nFROM (\n  SELECT\n      customer_key,\n      customer_id,\n      given_name,\n      family_name,\n      city,\n      state_code,\n      state_name,\n      loyalty_tier,\n      email,\n      ROW_NUMBER() OVER (\n        PARTITION BY customer_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_customers\n  WHERE extract_date = (SELECT MAX(extract_date) FROM raw_customers)\n) ranked\nWHERE rn = 1",
+      "CREATE OR REPLACE TABLE stg_stores AS\nSELECT\n      store_key,\n      store_id,\n      store_name,\n      channel,\n      city,\n      state_code,\n      state_name,\n      postal_code,\n      opened_on,\n      is_active\nFROM (\n  SELECT\n      store_key,\n      store_id,\n      store_name,\n      channel,\n      city,\n      state_code,\n      state_name,\n      postal_code,\n      opened_on,\n      is_active,\n      ROW_NUMBER() OVER (\n        PARTITION BY store_id\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_stores\n  WHERE extract_date = (SELECT MAX(extract_date) FROM raw_stores)\n) ranked\nWHERE rn = 1",
+      "CREATE OR REPLACE TABLE stg_daily_inventory AS\nSELECT\n      store_id,\n      product_id,\n      snapshot_date,\n      on_hand_units,\n      reserved_units\nFROM (\n  SELECT\n      store_id,\n      product_id,\n      snapshot_date,\n      on_hand_units,\n      reserved_units,\n      ROW_NUMBER() OVER (\n        PARTITION BY store_id, product_id, snapshot_date\n        ORDER BY extract_ts DESC, source_file DESC\n      ) AS rn\n  FROM raw_daily_inventory\n  \n) ranked\nWHERE rn = 1",
+      "CREATE OR REPLACE TABLE dim_product AS\nSELECT product_key, product_id, sku, product_name, category, brand, list_price_centavos, is_active\nFROM stg_products",
+      "CREATE OR REPLACE TABLE dim_customer AS\nSELECT customer_key, customer_id, given_name, family_name, city, state_code, state_name, loyalty_tier, email\nFROM stg_customers",
+      "CREATE OR REPLACE TABLE dim_store AS\nSELECT store_key, store_id, store_name, channel, city, state_code, state_name, postal_code, opened_on, is_active\nFROM stg_stores",
+      "DROP INDEX IF EXISTS idx_fact_order_lines_order_date",
+      "DROP INDEX IF EXISTS idx_fact_order_lines_store_id",
+      "DROP INDEX IF EXISTS idx_fact_order_lines_product_id",
+      "CREATE OR REPLACE TABLE fact_order_lines AS\nSELECT\n      s.order_line_id,\n      s.order_id,\n      d.date_key,\n      p.product_key,\n      c.customer_key,\n      st.store_key,\n      s.quantity,\n      s.unit_price_centavos,\n      s.line_amount_centavos,\n      s.amount_mxn,\n      s.line_type,\n      s.channel,\n      s.status,\n      s.category,\n      s.order_ts,\n      s.order_date,\n      s.product_id,\n      s.customer_id,\n      s.store_id\nFROM stg_order_lines AS s\nJOIN dim_product AS p\n  ON s.product_id = p.product_id\nJOIN dim_customer AS c\n  ON s.customer_id = c.customer_id\nJOIN dim_store AS st\n  ON s.store_id = st.store_id\nJOIN dim_date AS d\n  ON s.order_date = d.full_date",
+      "CREATE INDEX IF NOT EXISTS idx_fact_order_lines_order_date ON fact_order_lines(order_date)",
+      "CREATE INDEX IF NOT EXISTS idx_fact_order_lines_store_id ON fact_order_lines(store_id)",
+      "CREATE INDEX IF NOT EXISTS idx_fact_order_lines_product_id ON fact_order_lines(product_id)",
+      "CREATE INDEX IF NOT EXISTS idx_raw_order_lines_extract_date ON raw_order_lines(extract_date)"
+    ],
+    "quality_sql": [
+      "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM fact_order_lines\n  \n  GROUP BY order_line_id\n  HAVING COUNT(*) > 1\n) dupes",
+      "SELECT COUNT(*) AS violations FROM fact_order_lines\nWHERE order_line_id IS NULL OR order_id IS NULL OR date_key IS NULL\n  OR product_key IS NULL OR customer_key IS NULL OR store_key IS NULL\n  OR quantity IS NULL OR unit_price_centavos IS NULL OR line_amount_centavos IS NULL\n  OR amount_mxn IS NULL OR order_date IS NULL OR product_id IS NULL\n  OR customer_id IS NULL OR store_id IS NULL OR line_type IS NULL\n  OR status IS NULL OR channel IS NULL OR category IS NULL",
+      "SELECT COUNT(*) AS violations FROM fact_order_lines\nWHERE (line_type = 'sale' AND (quantity <= 0 OR line_amount_centavos <= 0))\n  OR (line_type = 'return' AND (quantity >= 0 OR line_amount_centavos >= 0))\n  OR line_type NOT IN ('sale', 'return')\n  OR status NOT IN ('completed', 'cancelled')\n  OR channel NOT IN ('online', 'physical')",
+      "SELECT COUNT(*) AS violations\nFROM fact_order_lines\nWHERE quantity * unit_price_centavos <> line_amount_centavos",
+      "SELECT COUNT(*) AS violations\nFROM fact_order_lines\nWHERE line_amount_centavos <> CAST(ROUND(amount_mxn * 100, 0) AS BIGINT)",
+      "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_product AS p\n  ON f.product_key = p.product_key\n AND f.product_id = p.product_id\nWHERE p.product_key IS NULL",
+      "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_customer AS c\n  ON f.customer_key = c.customer_key\n AND f.customer_id = c.customer_id\nWHERE c.customer_key IS NULL",
+      "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_store AS st\n  ON f.store_key = st.store_key\n AND f.store_id = st.store_id\nWHERE st.store_key IS NULL",
+      "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nLEFT JOIN dim_date AS d\n  ON f.date_key = d.date_key\n AND f.order_date = d.full_date\nWHERE d.date_key IS NULL",
+      "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nJOIN dim_product AS p\n  ON f.product_key = p.product_key\nWHERE f.category <> p.category",
+      "SELECT COUNT(*) AS violations\nFROM fact_order_lines AS f\nJOIN dim_store AS st\n  ON f.store_key = st.store_key\nWHERE f.channel <> st.channel",
+      "SELECT ABS(\n  (SELECT COUNT(*) FROM stg_order_lines) -\n  (SELECT COUNT(*) FROM fact_order_lines )\n) AS violations",
+      "SELECT CASE\n  WHEN COALESCE((SELECT MAX(order_date) FROM fact_order_lines), DATE '1900-01-01')\n       >= DATE '2026-03-06' THEN 0\n  ELSE 1\nEND AS violations",
+      "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM dim_product\n  \n  GROUP BY product_id\n  HAVING COUNT(*) > 1\n) dupes",
+      "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM dim_customer\n  \n  GROUP BY customer_id\n  HAVING COUNT(*) > 1\n) dupes",
+      "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM dim_store\n  \n  GROUP BY store_id\n  HAVING COUNT(*) > 1\n) dupes",
+      "SELECT COUNT(*) AS violations\nFROM stg_daily_inventory\nWHERE store_id IS NULL\n   OR product_id IS NULL\n   OR snapshot_date IS NULL\n   OR on_hand_units IS NULL\n   OR reserved_units IS NULL\n   OR on_hand_units < 0\n   OR reserved_units < 0\n   OR reserved_units > on_hand_units",
+      "SELECT COALESCE(SUM(extra), 0) AS violations\nFROM (\n  SELECT COUNT(*) - 1 AS extra\n  FROM stg_daily_inventory\n  \n  GROUP BY store_id, product_id, snapshot_date\n  HAVING COUNT(*) > 1\n) dupes",
+      "SELECT COUNT(*) AS violations\nFROM stg_daily_inventory AS i\nLEFT JOIN dim_store AS st\n  ON i.store_id = st.store_id\nWHERE st.store_id IS NULL",
+      "SELECT COUNT(*) AS violations\nFROM stg_daily_inventory AS i\nLEFT JOIN dim_product AS p\n  ON i.product_id = p.product_id\nWHERE p.product_id IS NULL",
+      "SELECT COUNT(*) AS violations\nFROM raw_order_lines\nWHERE extract_date <> order_date",
+      "SELECT COUNT(*) AS violations\nFROM raw_daily_inventory\nWHERE extract_date <> snapshot_date"
+    ],
+    "quality_names": [
+      "fact_order_line_id_unique",
+      "fact_required_not_null",
+      "fact_line_sign",
+      "fact_line_amount_matches_quantity",
+      "fact_amount_mxn_matches_centavos",
+      "fact_product_fk",
+      "fact_customer_fk",
+      "fact_store_fk",
+      "fact_date_fk",
+      "fact_category_matches_product",
+      "fact_channel_matches_store",
+      "staging_matches_fact_rows",
+      "fact_freshness",
+      "dim_product_id_unique",
+      "dim_customer_id_unique",
+      "dim_store_id_unique",
+      "inventory_not_null_or_negative",
+      "inventory_unique",
+      "inventory_store_fk",
+      "inventory_product_fk",
+      "raw_extract_date_matches_order_date",
+      "raw_inventory_extract_date_matches_snapshot"
+    ],
+    "expected": {
+      "fact_rows": 224,
+      "cents": 69085521,
+      "staging_rows": 224,
+      "by_day": [
+        {
+          "order_date": "2026-03-02",
+          "rows": 42,
+          "cents": 12836567
+        },
+        {
+          "order_date": "2026-03-03",
+          "rows": 44,
+          "cents": 13447513
+        },
+        {
+          "order_date": "2026-03-04",
+          "rows": 44,
+          "cents": 13093810
+        },
+        {
+          "order_date": "2026-03-05",
+          "rows": 46,
+          "cents": 15302215
+        },
+        {
+          "order_date": "2026-03-06",
+          "rows": 48,
+          "cents": 14405416
+        }
+      ]
+    },
+    "pipeline": {
+      "order_line_files_read": 5,
+      "fact_order_lines": 224,
+      "quality_passed": true
+    }
+  }
+}

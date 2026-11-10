@@ -29,3 +29,20 @@ jobs:
           ruff format --check .
       - name: Test
         run: pytest
+
+  site:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - name: Build the browser site
+        working-directory: site
+        run: |
+          npm ci
+          npm test
+          npm run build

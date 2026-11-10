@@ -19,3 +19,5 @@ logs/
 .coverage
 htmlcov/
 .python-version.local
+site/node_modules/
+site/dist/
