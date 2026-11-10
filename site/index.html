@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mercado Alba ELT</title>
+    <meta
+      name="description"
+      content="El DAG incremental de Mercado Alba corre su SQL en el navegador, con DuckDB-WASM y un extracto sintético."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23143D2E'/%3E%3C/svg%3E"
+    />
+  </head>
+  <body>
+    <a class="skip" href="#bench" data-i18n="skip">Saltar al DAG</a>
+    <header class="top">
+      <a class="wordmark" href="#bench">Mercado Alba</a>
+      <nav>
+        <a href="#bench" data-i18n="nav-dag">DAG</a>
+        <a href="#sql" data-i18n="nav-sql">SQL</a>
+        <a href="#lineage" data-i18n="nav-lineage">Linaje</a>
+        <a href="#measurement" data-i18n="nav-measure">Medición</a>
+        <button type="button" id="lang">EN</button>
+        <a href="https://github.com/Eflores1122/airflow-bigquery-retail-elt">GitHub</a>
+      </nav>
+    </header>
+    <main>
+      <section id="bench" aria-labelledby="bench-title">
+        <h1 id="bench-title">mercadoalba_elt_incremental</h1>
+        <p class="lead" data-i18n="lead"></p>
+        <p class="muted" data-i18n="schedule"></p>
+        <div class="toolbar">
+          <p id="status" role="status">Cargando DuckDB-WASM y los parquet del extracto.</p>
+          <div class="actions">
+            <button type="button" id="next" disabled data-i18n="next-first"></button>
+            <label class="check">
+              <input id="step" type="checkbox" />
+              <span data-i18n="step-label"></span>
+            </label>
+            <button type="button" class="secondary" id="replay" hidden></button>
+            <button type="button" class="secondary" id="lookback" hidden></button>
+            <button type="button" class="secondary" id="correction" hidden></button>
+            <button type="button" class="secondary" id="reset" data-i18n="reset"></button>
+          </div>
+        </div>
+        <p id="run-error" class="error" role="alert" hidden></p>
+        <div class="bench-grid">
+          <div>
+            <h2 data-i18n="tasks-title"></h2>
+            <ol class="dag" id="dag"></ol>
+            <h2 data-i18n="log-title"></h2>
+            <ol class="log" id="log"></ol>
+          </div>
+          <div class="results">
+            <div class="table-wrap">
+              <table id="by-day">
+                <caption data-i18n="by-day-caption"></caption>
+                <thead>
+                  <tr>
+                    <th data-i18n="by-day-date"></th>
+                    <th data-i18n="by-day-rows"></th>
+                    <th data-i18n="by-day-cents"></th>
+                    <th data-i18n="by-day-bar"></th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="table-wrap">
+              <table id="fact">
+                <caption id="fact-caption" data-i18n="fact-caption-empty"></caption>
+                <thead>
+                  <tr>
+                    <th data-i18n="fact-id"></th>
+                    <th data-i18n="fact-date"></th>
+                    <th data-i18n="fact-type"></th>
+                    <th data-i18n="fact-status"></th>
+                    <th data-i18n="fact-channel"></th>
+                    <th data-i18n="fact-category"></th>
+                    <th data-i18n="fact-qty"></th>
+                    <th data-i18n="fact-cents"></th>
+                    <th data-i18n="fact-store"></th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="table-wrap">
+              <table id="categories">
+                <caption data-i18n="cat-caption"></caption>
+                <thead>
+                  <tr>
+                    <th data-i18n="cat-name"></th>
+                    <th data-i18n="cat-rows"></th>
+                    <th data-i18n="cat-cents"></th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <details id="quality">
+              <summary id="quality-summary" data-i18n="quality-pending"></summary>
+              <ol id="quality-list"></ol>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <section id="sql" aria-labelledby="sql-title">
+        <h2 id="sql-title" data-i18n="sql-title"></h2>
+        <p data-i18n="sql-lead"></p>
+        <label for="sql-text" data-i18n="sql-label"></label>
+        <textarea id="sql-text" class="sql" spellcheck="false"></textarea>
+        <div class="actions">
+          <button type="button" id="sql-run" data-i18n="sql-run"></button>
+          <button type="button" class="secondary" id="sql-restore" data-i18n="sql-restore"></button>
+        </div>
+        <p id="sql-error" class="error" role="alert" hidden></p>
+        <div id="sql-result"></div>
+      </section>
+
+      <section id="lineage" aria-labelledby="lineage-title">
+        <h2 id="lineage-title" data-i18n="lineage-title"></h2>
+        <p data-i18n="lineage-lead"></p>
+        <div class="arch" id="arch"></div>
+        <p data-i18n="inventory-note"></p>
+        <div class="table-wrap">
+          <table id="er">
+            <caption data-i18n="er-caption"></caption>
+            <thead>
+              <tr>
+                <th data-i18n="er-from"></th>
+                <th data-i18n="er-to"></th>
+                <th data-i18n="er-key"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>dim_date</td>
+                <td>fact_order_lines</td>
+                <td class="mono">date_key</td>
+              </tr>
+              <tr>
+                <td>dim_product</td>
+                <td>fact_order_lines</td>
+                <td class="mono">product_key</td>
+              </tr>
+              <tr>
+                <td>dim_customer</td>
+                <td>fact_order_lines</td>
+                <td class="mono">customer_key</td>
+              </tr>
+              <tr>
+                <td>dim_store</td>
+                <td>fact_order_lines</td>
+                <td class="mono">store_key</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <h2 data-i18n="strategies-title"></h2>
+        <div class="table-wrap">
+          <table id="strategies">
+            <caption data-i18n="strategies-caption"></caption>
+            <thead>
+              <tr>
+                <th data-i18n="strategies-topic"></th>
+                <th data-i18n="strategies-full"></th>
+                <th data-i18n="strategies-inc"></th>
+              </tr>
+            </thead>
+            <tbody id="strategies-body"></tbody>
+          </table>
+        </div>
+        <h2 data-i18n="full-title"></h2>
+        <p data-i18n="full-lead"></p>
+        <div class="actions">
+          <button type="button" id="full" data-i18n="full-run"></button>
+        </div>
+        <div id="full-result"></div>
+      </section>
+
+      <section id="measurement" aria-labelledby="measure-title">
+        <h2 id="measure-title" data-i18n="measure-title"></h2>
+        <p data-i18n="measure-lead"></p>
+        <p id="bench-source"></p>
+        <p id="bench-disclaimer"></p>
+        <div class="table-wrap">
+          <table id="benchmark">
+            <thead>
+              <tr>
+                <th data-i18n="bench-scenario"></th>
+                <th data-i18n="bench-total"></th>
+                <th data-i18n="bench-load"></th>
+                <th data-i18n="bench-publish"></th>
+                <th data-i18n="bench-quality"></th>
+                <th data-i18n="bench-files"></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p id="ratios"></p>
+        <h2 data-i18n="sample-title"></h2>
+        <p id="sample-note"></p>
+        <p id="engine-note"></p>
+      </section>
+    </main>
+    <footer>
+      <p>
+        <a href="https://github.com/Eflores1122">Edgar Flores</a>
+        ·
+        <a href="https://github.com/Eflores1122/airflow-bigquery-retail-elt">airflow-bigquery-retail-elt</a>
+      </p>
+      <p data-i18n="font-note"></p>
+      <p data-i18n="color-note"></p>
+    </footer>
+    <noscript>Esta página necesita JavaScript para ejecutar DuckDB-WASM.</noscript>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

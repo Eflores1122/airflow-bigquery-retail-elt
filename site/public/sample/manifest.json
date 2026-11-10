@@ -1,0 +1,184 @@
+{
+  "generator": {
+    "module": "mercadoalba.generate",
+    "seed": 42,
+    "products": 12,
+    "stores": 3,
+    "customers": 24,
+    "order_lines_per_day": 40,
+    "vary_volume_by_weekday": true,
+    "start": "2026-03-02",
+    "end": "2026-03-06"
+  },
+  "duckdb_python": "2.0.0",
+  "dim_date_rows": 1827,
+  "dim_date_span": [
+    "2024-01-01",
+    "2028-12-31"
+  ],
+  "correction": {
+    "date": "2026-03-04",
+    "updated_order_line_id": "L202603040000000",
+    "quantity_before": 3,
+    "quantity_after": 4,
+    "unit_price_centavos": 110325,
+    "dropped_order_line_id": "L202603040000043",
+    "rows_before": 44,
+    "rows_after": 43
+  },
+  "files": [
+    {
+      "path": "landing/order_lines/dt=2026-03-02/part-000.parquet",
+      "rows": 42,
+      "bytes": 6197
+    },
+    {
+      "path": "landing/order_lines/dt=2026-03-03/part-000.parquet",
+      "rows": 44,
+      "bytes": 6305
+    },
+    {
+      "path": "landing/order_lines/dt=2026-03-04/part-000.parquet",
+      "rows": 44,
+      "bytes": 6256
+    },
+    {
+      "path": "landing/order_lines/dt=2026-03-05/part-000.parquet",
+      "rows": 46,
+      "bytes": 6240
+    },
+    {
+      "path": "landing/order_lines/dt=2026-03-06/part-000.parquet",
+      "rows": 48,
+      "bytes": 6268
+    },
+    {
+      "path": "landing/products/dt=2026-03-02/part-000.parquet",
+      "rows": 12,
+      "bytes": 3744
+    },
+    {
+      "path": "landing/products/dt=2026-03-03/part-000.parquet",
+      "rows": 12,
+      "bytes": 3744
+    },
+    {
+      "path": "landing/products/dt=2026-03-04/part-000.parquet",
+      "rows": 12,
+      "bytes": 3744
+    },
+    {
+      "path": "landing/products/dt=2026-03-05/part-000.parquet",
+      "rows": 12,
+      "bytes": 3744
+    },
+    {
+      "path": "landing/products/dt=2026-03-06/part-000.parquet",
+      "rows": 12,
+      "bytes": 3744
+    },
+    {
+      "path": "landing/customers/dt=2026-03-02/part-000.parquet",
+      "rows": 24,
+      "bytes": 4477
+    },
+    {
+      "path": "landing/customers/dt=2026-03-03/part-000.parquet",
+      "rows": 24,
+      "bytes": 4477
+    },
+    {
+      "path": "landing/customers/dt=2026-03-04/part-000.parquet",
+      "rows": 24,
+      "bytes": 4477
+    },
+    {
+      "path": "landing/customers/dt=2026-03-05/part-000.parquet",
+      "rows": 24,
+      "bytes": 4477
+    },
+    {
+      "path": "landing/customers/dt=2026-03-06/part-000.parquet",
+      "rows": 24,
+      "bytes": 4477
+    },
+    {
+      "path": "landing/stores/dt=2026-03-02/part-000.parquet",
+      "rows": 3,
+      "bytes": 3976
+    },
+    {
+      "path": "landing/stores/dt=2026-03-03/part-000.parquet",
+      "rows": 3,
+      "bytes": 3976
+    },
+    {
+      "path": "landing/stores/dt=2026-03-04/part-000.parquet",
+      "rows": 3,
+      "bytes": 3976
+    },
+    {
+      "path": "landing/stores/dt=2026-03-05/part-000.parquet",
+      "rows": 3,
+      "bytes": 3976
+    },
+    {
+      "path": "landing/stores/dt=2026-03-06/part-000.parquet",
+      "rows": 3,
+      "bytes": 3976
+    },
+    {
+      "path": "landing/daily_inventory/dt=2026-03-02/part-000.parquet",
+      "rows": 36,
+      "bytes": 2899
+    },
+    {
+      "path": "landing/daily_inventory/dt=2026-03-03/part-000.parquet",
+      "rows": 36,
+      "bytes": 2890
+    },
+    {
+      "path": "landing/daily_inventory/dt=2026-03-04/part-000.parquet",
+      "rows": 36,
+      "bytes": 2901
+    },
+    {
+      "path": "landing/daily_inventory/dt=2026-03-05/part-000.parquet",
+      "rows": 36,
+      "bytes": 2920
+    },
+    {
+      "path": "landing/daily_inventory/dt=2026-03-06/part-000.parquet",
+      "rows": 36,
+      "bytes": 2876
+    },
+    {
+      "path": "corrections/order_lines/dt=2026-03-04/part-000.parquet",
+      "rows": 43,
+      "bytes": 6553
+    },
+    {
+      "path": "calendar/dim_date.parquet",
+      "rows": 1827,
+      "bytes": 14622
+    }
+  ],
+  "run_order": [
+    "inc-2026-03-02",
+    "inc-2026-03-03",
+    "inc-2026-03-04",
+    "inc-2026-03-05",
+    "inc-2026-03-06",
+    "replay-2026-03-06",
+    "lookback-2026-03-06",
+    "correction-2026-03-04"
+  ],
+  "full_refresh_matches_incremental_fact": true,
+  "tasks": [
+    "resolve_window",
+    "generate_and_land",
+    "load_raw_and_stage",
+    "publish_marts",
+    "data_quality"
+  ]
+}
