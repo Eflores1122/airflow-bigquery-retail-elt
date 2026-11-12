@@ -10,6 +10,16 @@ This repository is a reference implementation built with synthetic data. It demo
 
 Mercado Alba is not a real company. Every order, product, customer, store, and inventory row is generated locally. The timings below are local synthetic runs on this dataset and this machine.
 
+## Tech stack
+
+- Python 3.11 or 3.12
+- Apache Airflow 2.10.5 TaskFlow DAGs
+- DuckDB 2.x as the local warehouse used by the CLI, tests, and CI
+- BigQuery as an optional adapter that runs the same `MERGE` text
+- Parquet landing files written with PyArrow
+- pytest and ruff
+- A Vite page that runs the shared SQL in DuckDB-WASM
+
 ## What runs locally
 
 No GCP project and no credentials are required.
@@ -179,22 +189,12 @@ docker-compose.yml     optional Airflow 2.10.5, not used by tests
 
 ## Run it
 
-Python 3.11 or 3.12. Airflow 2.10.5 does not support 3.13. Install Airflow with its constraint file first. That file pins DuckDB 1.1.3, which has no `MERGE`. The second command installs this project and upgrades DuckDB to 2.x, which is what the fact `MERGE` runs on:
+Python 3.11 or 3.12. Airflow 2.10.5 does not support 3.13. The local warehouse does not need a GCP project, a service account, or `google-cloud-bigquery`. The CLI always opens DuckDB, including when `MERCADOALBA_WAREHOUSE=bigquery` or `GOOGLE_APPLICATION_CREDENTIALS` is set.
 
 ```bash
 python3.12 -m venv .venv
 source .venv/bin/activate
-pip install "apache-airflow==2.10.5" \
-  --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.10.5/constraints-3.12.txt"
-pip install -e ".[dev]"
-```
-
-Lint and test (no Docker, no credentials):
-
-```bash
-ruff check .
-ruff format --check .
-pytest
+pip install -e .
 ```
 
 A small local warehouse:
@@ -209,6 +209,47 @@ python -m mercadoalba \
   --products 40 \
   --stores 4 \
   --no-weekday-volume
+```
+
+### Sample output
+
+Row counts below are deterministic for seed 42 and those flags. `timings_seconds` is from one local run and will differ on another machine.
+
+```json
+{
+  "mode": "full_refresh",
+  "logical_date": "2026-03-02",
+  "window_start": "2026-03-01",
+  "window_end": "2026-03-02",
+  "order_line_files_read": 2,
+  "staging_order_lines": 4000,
+  "fact_order_lines": 4000,
+  "fact_rows_in_window": 4000,
+  "dim_products": 40,
+  "dim_customers": 500,
+  "dim_stores": 4,
+  "quality_passed": true,
+  "timings_seconds": {
+    "generate": 0.046516,
+    "load_and_stage": 0.119493,
+    "publish": 0.194921,
+    "quality": 0.019085,
+    "total": 0.409408
+  }
+}
+```
+
+### Lint and tests
+
+Tests parse the DAGs, so they need Airflow. Install it from the constraint file that matches the interpreter, then install the dev extra. The constraint file pins DuckDB 1.1.3, which has no `MERGE`. The second command upgrades DuckDB to 2.x, which is what the fact `MERGE` runs on. `make install` selects `constraints-3.11.txt` or `constraints-3.12.txt` from the interpreter version. No Docker and no credentials:
+
+```bash
+pip install "apache-airflow==2.10.5" \
+  --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.10.5/constraints-3.12.txt"
+pip install -e ".[dev]"
+ruff check .
+ruff format --check .
+pytest
 ```
 
 Incremental for one day already on disk:
@@ -276,6 +317,18 @@ python scripts/export_browser_sample.py
 ```
 
 Pages deploys from `.github/workflows/pages.yml` on a push to `main`. The site does not start Airflow, does not call BigQuery, and does not replay retries or SLAs.
+
+## Limitations
+
+- Mercado Alba is fictitious. Nothing in the landing files is a real shopper, shop, or product, and the pipeline is not a record of a production system.
+- CI and the CLI use DuckDB. The BigQuery adapter is optional, is not installed in CI, and is not called unless `MERCADOALBA_WAREHOUSE=bigquery` is set for the DAG path.
+- DuckDB secondary indexes stand in for `PARTITION BY order_date` and `CLUSTER BY store_id, product_id`. They are not the same storage layout.
+- The browser page uses DuckDB-WASM 1.32.0 (DuckDB 1.4.3). The local warehouse uses DuckDB 2.x. Both execute the DuckDB dialect of the shared SQL.
+- `dim_date` flags recurring Mexican public rest days only. One-off civic dates are omitted.
+- Daily inventory is landed and checked. It is not part of the sales star, and it is not a stock ledger rebuilt from orders.
+- A DuckDB file has one writer. Both DAGs set `max_active_runs` to 1.
+- A missed Airflow SLA is visible on the task. This compose file does not configure a notifier or SMTP, so it does not send a message.
+- The benchmark table is a local synthetic timing of the committed dataset. It is not a capacity plan.
 
 ## License
 

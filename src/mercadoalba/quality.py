@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
-from typing import Protocol
+from typing import Any, Protocol
 
 from mercadoalba.sql_builder import SqlContext, dates_predicate, sql_type
 
@@ -17,7 +17,7 @@ from mercadoalba.sql_builder import SqlContext, dates_predicate, sql_type
 class Queryable(Protocol):
     dialect: str
 
-    def query(self, sql: str) -> list[dict]: ...
+    def query(self, sql: str) -> list[dict[str, Any]]: ...
 
 
 @dataclass(frozen=True)

@@ -9,11 +9,15 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
+from typing import TypeVar
 
 LOGGER = logging.getLogger(__name__)
 
+# TypeVar, not a PEP 695 parameter: this module must import on Python 3.11.
+T = TypeVar("T")
 
-def call_with_retries[T](
+
+def call_with_retries(
     fn: Callable[[], T],
     *,
     attempts: int,

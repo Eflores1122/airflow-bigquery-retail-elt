@@ -137,6 +137,18 @@ def test_retries_stop_after_success_and_reraise() -> None:
         call_with_retries(always, attempts=2)
 
 
+def test_unset_warehouse_stays_on_duckdb_when_gcp_env_is_present(monkeypatch) -> None:
+    monkeypatch.delenv("MERCADOALBA_WAREHOUSE", raising=False)
+    monkeypatch.delenv("MERCADOALBA_BQ_PROJECT", raising=False)
+    monkeypatch.delenv("MERCADOALBA_GCS_LANDING_PREFIX", raising=False)
+    monkeypatch.setenv("GOOGLE_APPLICATION_CREDENTIALS", "/tmp/does-not-exist-adc.json")
+    monkeypatch.setenv("GOOGLE_CLOUD_PROJECT", "not-a-real-project")
+    settings = load_settings()
+    assert settings.warehouse_backend == "duckdb"
+    assert settings.bq_project is None
+    assert settings.gcs_landing_prefix is None
+
+
 def test_settings_from_environment(monkeypatch, tmp_path) -> None:
     monkeypatch.setenv("MERCADOALBA_WAREHOUSE", "duckdb")
     monkeypatch.setenv("MERCADOALBA_LANDING_ROOT", str(tmp_path / "land"))
@@ -234,6 +246,14 @@ def test_readme_states_the_reference_boundary() -> None:
     assert "local synthetic" in readme
     assert "incremental" in readme
     assert "backfill" in readme
+    assert "## tech stack" in readme
+    assert "## limitations" in readme
+    assert "pip install -e ." in readme
+    assert '"fact_order_lines": 4000' in readme
+    assert '"dim_products": 40' in readme
+    assert '"dim_customers": 500' in readme
+    assert '"dim_stores": 4' in readme
+    assert '"quality_passed": true' in readme
 
 
 def test_incremental_window_from_a_fake_airflow_context() -> None:

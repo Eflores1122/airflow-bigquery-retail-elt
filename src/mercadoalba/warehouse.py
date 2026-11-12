@@ -54,7 +54,11 @@ def context_for(settings: Settings, warehouse: Warehouse) -> SqlContext:
 
 
 class DuckDBWarehouse:
-    """A single-writer DuckDB file. Airflow runs are capped at one active run."""
+    """A single-writer DuckDB file. Airflow runs are capped at one active run.
+
+    The session does not install or autoload extensions, so reading local
+    parquet does not consult Google application-default credentials.
+    """
 
     dialect = "duckdb"
 
@@ -74,8 +78,17 @@ class DuckDBWarehouse:
             import duckdb
 
             self.path.parent.mkdir(parents=True, exist_ok=True)
-            self._con = duckdb.connect(str(self.path))
-            self._con.execute("SET TimeZone = 'UTC'")
+            connection = duckdb.connect(str(self.path))
+            try:
+                # Local parquet only. Leaving autoload on would let DuckDB
+                # fetch httpfs and consult cloud credentials for a gs:// path.
+                connection.execute("SET TimeZone = 'UTC'")
+                connection.execute("SET autoinstall_known_extensions = false")
+                connection.execute("SET autoload_known_extensions = false")
+            except Exception:
+                connection.close()
+                raise
+            self._con = connection
         return self._con
 
     def execute(self, sql: str) -> None:

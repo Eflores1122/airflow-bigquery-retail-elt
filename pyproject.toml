@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,11 +8,11 @@ version = "0.1.0"
 description = "Reference Airflow ELT for a fictitious Mexican omnichannel retailer. Synthetic data only."
 readme = "README.md"
 requires-python = ">=3.11,<3.13"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "Edgar Flores" }]
 keywords = ["airflow", "elt", "duckdb", "bigquery", "synthetic-data"]
 classifiers = [
-  "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Topic :: Database",
@@ -27,8 +27,9 @@ dependencies = [
 bigquery = ["google-cloud-bigquery>=3.25"]
 dev = [
   "apache-airflow==2.10.5",
-  "pytest",
-  "ruff",
+  # Match the Airflow 2.10.5 constraint pin so this extra does not upgrade pluggy.
+  "pytest==8.3.4",
+  "ruff==0.17.4",
 ]
 
 [project.scripts]
@@ -37,13 +38,16 @@ mercadoalba = "mercadoalba.__main__:cli"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+mercadoalba = ["py.typed"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
 
 [tool.ruff]
 line-length = 100
-target-version = "py312"
+target-version = "py311"
 extend-exclude = [".airflow-tests", "data", "benchmarks"]
 
 [tool.ruff.lint]
