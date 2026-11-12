@@ -1,15 +1,18 @@
+PYTHON ?= python3
+PY_MM := $(shell $(PYTHON) -c 'import sys; print("%d.%d" % sys.version_info[:2])')
+
 .PHONY: install lint test benchmark
 
 install:
-	python -m pip install "apache-airflow==2.10.5" --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.10.5/constraints-3.12.txt"
-	python -m pip install -e ".[dev]"
+	$(PYTHON) -m pip install "apache-airflow==2.10.5" --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.10.5/constraints-$(PY_MM).txt"
+	$(PYTHON) -m pip install -e ".[dev]"
 
 lint:
-	ruff check .
-	ruff format --check .
+	$(PYTHON) -m ruff check .
+	$(PYTHON) -m ruff format --check .
 
 test:
-	pytest
+	$(PYTHON) -m pytest
 
 benchmark:
-	python scripts/benchmark.py
+	$(PYTHON) scripts/benchmark.py

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import shutil
+import sys
 from dataclasses import replace
 from datetime import date, timedelta
 
@@ -354,7 +355,33 @@ def test_publish_retries_a_transient_merge_error(tmp_path) -> None:
     assert report.fact_order_lines == 50
 
 
-def test_cli_writes_a_local_warehouse(tmp_path) -> None:
+def test_duckdb_session_does_not_autoload_extensions(tmp_path) -> None:
+    warehouse = DuckDBWarehouse(tmp_path / "warehouse.duckdb")
+    try:
+        autoinstall = warehouse.query("SELECT current_setting('autoinstall_known_extensions') AS v")
+        autoload = warehouse.query("SELECT current_setting('autoload_known_extensions') AS v")
+        loaded = warehouse.query("SELECT extension_name FROM duckdb_extensions() WHERE loaded")
+    finally:
+        warehouse.close()
+    assert str(autoinstall[0]["v"]).lower() in {"false", "0"}
+    assert str(autoload[0]["v"]).lower() in {"false", "0"}
+    assert "httpfs" not in {row["extension_name"] for row in loaded}
+
+
+def test_cli_writes_a_local_warehouse_without_gcp(tmp_path, monkeypatch) -> None:
+    """The CLI stays on DuckDB when the environment points at BigQuery."""
+
+    missing = tmp_path / "missing-adc.json"
+    monkeypatch.setenv("GOOGLE_APPLICATION_CREDENTIALS", str(missing))
+    monkeypatch.setenv("GOOGLE_CLOUD_PROJECT", "not-a-real-project")
+    monkeypatch.setenv("GCLOUD_PROJECT", "not-a-real-project")
+    monkeypatch.setenv("CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE", str(missing))
+    monkeypatch.setenv("MERCADOALBA_WAREHOUSE", "bigquery")
+    monkeypatch.setenv("MERCADOALBA_BQ_PROJECT", "not-a-real-project")
+    monkeypatch.setenv("MERCADOALBA_GCS_LANDING_PREFIX", "gs://not-a-bucket/mercadoalba")
+    before = {
+        name for name in sys.modules if name == "google.cloud" or name.startswith("google.cloud.")
+    }
     from mercadoalba.__main__ import main
 
     code = main(
@@ -383,5 +410,10 @@ def test_cli_writes_a_local_warehouse(tmp_path) -> None:
         ]
     )
     assert code == 0
+    after = {
+        name for name in sys.modules if name == "google.cloud" or name.startswith("google.cloud.")
+    }
+    assert after == before
+    assert not missing.exists()
     assert (tmp_path / "cli.duckdb").exists()
     assert _checksum(tmp_path / "cli.duckdb")["n"] == 20

@@ -28,7 +28,17 @@ jobs:
           ruff check .
           ruff format --check .
       - name: Test
-        run: pytest
+        run: |
+          unset GOOGLE_APPLICATION_CREDENTIALS \
+            GOOGLE_CLOUD_PROJECT \
+            GCLOUD_PROJECT \
+            CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE \
+            CLOUDSDK_AUTH_ACCESS_TOKEN \
+            GOOGLE_GHA_CREDS_PATH \
+            MERCADOALBA_BQ_PROJECT \
+            MERCADOALBA_GCS_LANDING_PREFIX
+          export MERCADOALBA_WAREHOUSE=duckdb
+          pytest
 
   site:
     runs-on: ubuntu-latest

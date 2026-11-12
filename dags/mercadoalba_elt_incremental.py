@@ -57,14 +57,14 @@ _DEFAULT_ARGS = {
     tags=["mercadoalba", "elt", "synthetic", "incremental"],
     doc_md=__doc__,
 )
-def mercadoalba_elt_incremental():
+def mercadoalba_elt_incremental() -> None:
     @task(
         task_id="resolve_window",
         retries=1,
         execution_timeout=timedelta(minutes=5),
         sla=timedelta(minutes=10),
     )
-    def resolve_window() -> dict:
+    def resolve_window() -> dict[str, object]:
         return window_from_airflow("incremental", get_current_context())
 
     @task(
@@ -72,7 +72,7 @@ def mercadoalba_elt_incremental():
         execution_timeout=timedelta(minutes=30),
         sla=timedelta(minutes=15),
     )
-    def generate_and_land_task(window: dict) -> dict:
+    def generate_and_land_task(window: dict[str, object]) -> dict[str, object]:
         return generate_and_land(load_settings(), window)
 
     @task(
@@ -80,7 +80,7 @@ def mercadoalba_elt_incremental():
         execution_timeout=timedelta(minutes=30),
         sla=timedelta(minutes=20),
     )
-    def load_raw_and_stage_task(window: dict) -> dict:
+    def load_raw_and_stage_task(window: dict[str, object]) -> dict[str, object]:
         return load_raw_and_stage(load_settings(), window)
 
     @task(
@@ -88,7 +88,7 @@ def mercadoalba_elt_incremental():
         execution_timeout=timedelta(minutes=30),
         sla=timedelta(minutes=20),
     )
-    def publish_marts_task(window: dict) -> dict:
+    def publish_marts_task(window: dict[str, object]) -> dict[str, object]:
         return publish_marts(load_settings(), window)
 
     @task(
@@ -97,7 +97,7 @@ def mercadoalba_elt_incremental():
         execution_timeout=timedelta(minutes=20),
         sla=timedelta(minutes=15),
     )
-    def data_quality_task(window: dict) -> None:
+    def data_quality_task(window: dict[str, object]) -> None:
         report = data_quality(load_settings(), window)
         if not report.ok:
             raise RuntimeError(str(report))

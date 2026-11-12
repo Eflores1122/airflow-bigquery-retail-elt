@@ -15,7 +15,7 @@ import shutil
 import sys
 import tempfile
 from dataclasses import replace
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -378,9 +378,7 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
-def date_start():
-    from datetime import date
-
+def date_start() -> date:
     return date(2026, 1, 5)
 
 

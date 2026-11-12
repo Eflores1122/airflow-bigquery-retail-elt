@@ -55,7 +55,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s %(message)s")
+    # The CLI is the credential-free path. It does not read
+    # MERCADOALBA_WAREHOUSE or any Google application-default credentials.
     settings = Settings(
+        warehouse_backend="duckdb",
         duckdb_path=args.duckdb_path,
         landing_root=args.landing_root,
         seed=args.seed,

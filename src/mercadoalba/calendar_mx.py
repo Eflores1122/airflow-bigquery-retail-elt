@@ -8,6 +8,7 @@ are left out. This is a calendar attribute for a fictitious company.
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from datetime import date, timedelta
 
 DAY_NAMES = (
@@ -45,7 +46,7 @@ def holiday_name(day: date) -> str | None:
     return named.get(day)
 
 
-def iter_dates(start: date, end: date):
+def iter_dates(start: date, end: date) -> Iterator[date]:
     if end < start:
         raise ValueError(f"end {end} is before start {start}")
     current = start
